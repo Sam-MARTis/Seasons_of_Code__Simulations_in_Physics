@@ -9,10 +9,10 @@ Going to write the high-performant code in Fortran!
 
 
 Step 1: Learn fortran. Check!
-(https://github.com/Sam-MARTis/Fortran)[https://github.com/Sam-MARTis/Fortran]
+[https://github.com/Sam-MARTis/Fortran](https://github.com/Sam-MARTis/Fortran)
 
 Step 2: Complete Week0 Assignment. Check!
-(https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week0/assignment/solutions)[https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week0/assignment/solutions]
+[https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week0/assignment/solutions](https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week0/assignment/solutions)
 
 Lets gooooooo!
 
