@@ -9,11 +9,11 @@ I implemented the jacobi and gauss-seidel solver. I then reimplemented cause the
 
 Used the latter version for the poisson solvers.
 
-Once the conventional metrix method was applied, I also took upon the extra task of making a sparse matrix implementation.
+Once the conventional matrix method was applied, I also took upon the extra task of making a sparse matrix implementation.
 
 That took a while becuase I had took a break to complete some other work and by the time I came back, I looked at my code like... "When did I write all of this"
 
-After I reminded myself of what I had done, I tried a couple of methods of making an adjacent matrix. The main issue I faced was that arrays in fortran must be uniform. You can't have something like [[1,2,3,4], [8,4], [1], [24, 1,2]]
+After I reminded myself of what I had done, I tried a couple of methods of making a sparse matrix. The main issue I faced was that arrays in fortran must be uniform. You can't have something like [[1,2,3,4], [8,4], [1], [24, 1,2]]
 
 So it took a bit of manuevering to get that right. I ended up storing a 4 x $n^2$ x 2 matrix. The 3'd slice's 1st entry describes which state variable (ex: $U_{4,5}$) to add and 2nd entry describes its multiplier.
 The 1st slice's 4 entries are for the four state components the current state depends on.
@@ -25,7 +25,7 @@ There was an additional task of implementing the above in MATLAB, but due to tim
 
 One of the modules required for the heatmap doesn't work for me, so i instead used a graph. I scoured stackoverflow and google for a solution, but didnt find anything. 
 
-I ran the code in a VM and got the following images for different charge distributions
+I ran the code in a VM to get the heatmap part and got the following plots for different charge distributions
 
 
 ![Dist 1](assets/dist1.png)
@@ -34,7 +34,7 @@ I ran the code in a VM and got the following images for different charge distrib
 
 ![Dist 3](assets/dist3.png)
 
-The last one is $\sigma$(x,y)= (1/3) * (sin(x/50)*sin(y/50))
+The last one is $\sigma$(x,y)= (1/3) * (sin(x/50)*sin(y/50)), I believe
 
 
 For running any of the code, simply run the a.out file
