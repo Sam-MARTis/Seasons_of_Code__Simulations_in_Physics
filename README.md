@@ -16,10 +16,20 @@ Step 2: Complete Week 0 Assignment. Check!
 
 Step 3: Completed Week 1 Assignment, learn to plot using gnuplot, write reusable, modular code... CHECK!
 [https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week1/assignment/solutions](https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week1/assignment/solutions)
+![alt text](Learning/Week1/assets/lorenzAttractor.png)
 
-Lets gooooooo!
 
-Further steps later!
+
+Step 4: Week 2 and 3 assignments completed. Linear system of equation solvers and Poisson equation solving
+[https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week2_3](https://github.com/Sam-MARTis/Seasons_of_Code__Simulations_in_Physics/tree/main/Learning/Week2_3)
+
+![dist 1](Learning/Week2_3/assets/dist1.png)
+![dist 2](Learning/Week2_3/assets/dist2.png)
+![dist 3](Learning/Week2_3/assets/dist3.png)
+
+
+
+Step 5: Pick an open-ended project topic! Thinking of one rn.
 
 
 Ad astra!
