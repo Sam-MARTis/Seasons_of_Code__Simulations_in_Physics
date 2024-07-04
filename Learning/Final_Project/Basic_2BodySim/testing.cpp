@@ -62,7 +62,7 @@ int main()
     srand(time(NULL));
     sf::ContextSettings settings;
     settings.antialiasingLevel = 16;
-    sf::RenderWindow window(sf::VideoMode(800, 600), "First window", sf::Style::Default, settings);
+    sf::RenderWindow window(sf::VideoMode(800, 800), "First window", sf::Style::Default, settings);
 
     // long listLen = sizeof(agentList);
 
@@ -73,19 +73,23 @@ int main()
         window.clear();
 
 
-        std::getline(file, line);
-        for(int i = 0; i<TIME_SPEEDUP; i++){
+        // std::getline(file, line);
+        for(int i = 0; i<TIME_SPEEDUP*no_of_bodies; i++){
             std::getline(file, line);
         }
  
-        std::istringstream iss(line);
+        // std::istringstream iss(line);
         float x1, x2, y1, y2;
         float blank;
         // iss >> blank >> x1 >> y1 >> x2 >> y2;
-        iss>>blank;
+        
         for(int i1=0; i1<no_of_bodies; i1++){
+            std::getline(file, line);
+            std::istringstream iss(line);
+            iss>>blank;
             iss >>x1 >> y1;
             bodiesData[i1].setPosition(x1, y1);
+            // cout<<i1<<" "<<x1<<" "<<y1<<endl;
         }
         // bodiesData[0].setPosition(x1-200, y1-200);
         // bodiesData[1].setPosition(x2-200, y2-200);
