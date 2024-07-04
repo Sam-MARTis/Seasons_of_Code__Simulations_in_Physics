@@ -1,6 +1,6 @@
-#include<SFML/Graphics.hpp>
+#include <SFML/Graphics.hpp>
 
-#include<iostream>
+#include <iostream>
 
 using namespace std;
 #include <iostream>
@@ -8,20 +8,20 @@ using namespace std;
 #include <sstream>
 #include <vector>
 #include <string>
-#include <stdlib.h> 
+#include <stdlib.h>
 
-
-
-struct Data {
+struct Data
+{
     int index;
     float value;
     float values[6];
 };
 
-
-int main(){
+int main()
+{
     std::ifstream file("solutionValues.txt"); // Open the file
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         std::cerr << "Failed to open the file." << std::endl;
         return 1;
     }
@@ -38,16 +38,24 @@ int main(){
     std::istringstream iss(line);
     iss >> no_of_bodies >> dt >> G;
 
-    float bodiesMainData[no_of_bodies][6];
 
-    for(int iter= 0; iter<no_of_bodies; iter++){
-        std::getline(file, line);
-        std::istringstream iss(line);
-        for(int iter2= 0; iter2<6; iter2++){
-            iss>>bodiesMainData[iter][iter2];
-        }
+    float bodiesMainData[no_of_bodies][6];
+    sf::CircleShape bodiesData[no_of_bodies];
+    for(int i=0; i< no_of_bodies; i++){
+        bodiesData[i] = sf::CircleShape(10.f);
+        bodiesData[i].setRadius(10.f);
+        bodiesData[i].setFillColor(sf::Color::White);
     }
 
+    for (int iter = 0; iter < no_of_bodies; iter++)
+    {
+        std::getline(file, line);
+        std::istringstream iss(line);
+        for (int iter2 = 0; iter2 < 6; iter2++)
+        {
+            iss >> bodiesMainData[iter][iter2];
+        }
+    }
 
     srand(time(NULL));
     sf::ContextSettings settings;
@@ -56,19 +64,42 @@ int main(){
 
     // long listLen = sizeof(agentList);
 
-
-    
     window.setVerticalSyncEnabled(true);
-    
-    
 
-        while (window.isOpen())
+    while (window.isOpen())
     {
         window.clear();
+
+
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::getline(file, line);
+        std::istringstream iss(line);
+        float x1, x2, y1, y2;
+        float blank;
+        iss >> blank >> x1 >> y1 >> x2 >> y2;
+        bodiesData[0].setPosition(x1-200, y1-200);
+        bodiesData[1].setPosition(x2-200, y2-200);
+        // cout << x1 << " " << y1 << " " << x2 << " " << y2 << endl;
+        window.draw(bodiesData[0]);
+        window.draw(bodiesData[1]);
 
         // myAgent.drawShape(window);
         window.display();
         sf::Event event;
+
         while (window.pollEvent(event))
         {
             if (event.type == sf::Event::Closed)

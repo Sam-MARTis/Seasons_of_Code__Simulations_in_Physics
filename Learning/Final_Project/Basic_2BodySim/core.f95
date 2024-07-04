@@ -68,7 +68,7 @@ program main
     write(1, *) Moon%mass, Moon%x, Moon%y, Moon%vx, Moon%vy, Moon%size
 
 
-    do i= 1, 10000
+    do i= 1, 100000
         call update(Earth, Moon, dt, G)
         time = time + dt
         write(1, *) time, Earth%x, Earth%y, Moon%x, Moon%y

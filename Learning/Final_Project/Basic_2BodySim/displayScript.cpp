@@ -44,13 +44,8 @@ int main() {
     }
 
 
-    while ((std::getline(file, line)) && (k<5)) {
+    while ((std::getline(file, line))) {
 
-        std::sleep(100)
-        k++;
-        if(k>5){
-            break;
-        }
         std::istringstream iss(line);
 
         if (line_number == 0) {
