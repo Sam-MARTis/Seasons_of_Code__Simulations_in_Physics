@@ -42,11 +42,7 @@ int main()
 
     float bodiesMainData[no_of_bodies][6];
     sf::CircleShape bodiesData[no_of_bodies];
-    for(int i=0; i< no_of_bodies; i++){
-        bodiesData[i] = sf::CircleShape(10.f);
-        bodiesData[i].setRadius(10.f);
-        bodiesData[i].setFillColor(sf::Color::White);
-    }
+
 
     for (int iter = 0; iter < no_of_bodies; iter++)
     {
@@ -56,6 +52,11 @@ int main()
         {
             iss >> bodiesMainData[iter][iter2];
         }
+    }
+        for(int i=0; i< no_of_bodies; i++){
+        bodiesData[i] = sf::CircleShape(1.f);
+        bodiesData[i].setRadius(bodiesMainData[i][5]);
+        bodiesData[i].setFillColor(sf::Color::White);
     }
 
     srand(time(NULL));
