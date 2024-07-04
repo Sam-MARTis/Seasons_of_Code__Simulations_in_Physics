@@ -33,6 +33,7 @@ int main()
     int k = 0;
     float dt = 0.0f;
     float G = 0.0f;
+    const int TIME_SPEEDUP = 5;
 
     std::getline(file, line);
     std::istringstream iss(line);
@@ -72,29 +73,27 @@ int main()
 
 
         std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
-        std::getline(file, line);
+        for(int i = 0; i<TIME_SPEEDUP; i++){
+            std::getline(file, line);
+        }
+ 
         std::istringstream iss(line);
         float x1, x2, y1, y2;
         float blank;
-        iss >> blank >> x1 >> y1 >> x2 >> y2;
-        bodiesData[0].setPosition(x1-200, y1-200);
-        bodiesData[1].setPosition(x2-200, y2-200);
+        // iss >> blank >> x1 >> y1 >> x2 >> y2;
+        iss>>blank;
+        for(int i1=0; i1<no_of_bodies; i1++){
+            iss >>x1 >> y1;
+            bodiesData[i1].setPosition(x1, y1);
+        }
+        // bodiesData[0].setPosition(x1-200, y1-200);
+        // bodiesData[1].setPosition(x2-200, y2-200);
         // cout << x1 << " " << y1 << " " << x2 << " " << y2 << endl;
-        window.draw(bodiesData[0]);
-        window.draw(bodiesData[1]);
+        for(int i2=0; i2<no_of_bodies; i2++){
+            window.draw(bodiesData[i2]);
+        }
+        // window.draw(bodiesData[0]);
+        // window.draw(bodiesData[1]);
 
         // myAgent.drawShape(window);
         window.display();
