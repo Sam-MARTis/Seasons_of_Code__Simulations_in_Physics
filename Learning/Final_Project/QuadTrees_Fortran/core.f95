@@ -77,10 +77,44 @@ contains
 
     end function
 
-    recursive function queryTreeRegionForPoints(tree, x, y, width, height) result (pointsArray)
+    recursive function queryTreeRegionForPoints(tree, rx1, ry1, width, height) result (pointsArray)
         type(QuadTree):: tree
-        real :: x, y, width, height
-        type(Points), dimension(:), allocatable:: pointsArray
+        real :: rx1, ry1, width, height
+        type(Points), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
+        integer:: i, n
+        if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
+            allocate(pointsArray(0))
+            return
+        end if
+
+        if (tree%isDivided .eqv. .false.) then
+            pointsArray = tree%pointsArray
+            return
+        else
+            pointsArrayNW = queryTreeRegionForPoints(tree%NW, rx1, ry1, width, height)
+            pointsArrayNE = queryTreeRegionForPoints(tree%NE, rx1, ry1, width, height)
+            pointsArraySE = queryTreeRegionForPoints(tree%SE, rx1, ry1, width, height)
+            pointsArraySW = queryTreeRegionForPoints(tree%NW, rx1, ry1, width, height)
+            n = size(pointsArrayNW) + size(pointsArrayNE) + size(pointsArraySE) + size(pointsArraySW)
+            allocate(pointsArray(n))
+            do i = 1, size(pointsArrayNW)
+                pointsArray(i) = pointsArrayNW(i)
+            end do
+            do i = 1, size(pointsArrayNE)
+                pointsArray(size(pointsArrayNW)+i) = pointsArrayNE(i)
+            end do
+            do i = 1, size(pointsArraySE)
+                pointsArray(size(pointsArrayNW)+size(pointsArrayNE)+i) = pointsArraySE(i)
+            end do
+            do i = 1, size(pointsArraySW)
+                pointsArray(size(pointsArrayNW)+size(pointsArrayNE)+size(pointsArraySE)+i) = pointsArraySW(i)
+            end do
+
+            return
+
+        end if
+
+        
     
 
     end function
