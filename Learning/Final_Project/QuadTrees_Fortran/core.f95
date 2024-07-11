@@ -25,27 +25,49 @@ module custom_types
     !Data
     logical:: isDivided = .false.
     integer::pointsCount = 0
-    type(Points), dimension(4):: pointsArr
-    end type
+    type(Points), dimension(4):: pointsArray
+
+    end type QuadTree
     
 contains
 
-subroutine addPoints(self, point)
+recursive subroutine addPoints(self, point)
     type(QuadTree), intent(inout) :: self
     type(Points) , intent(inout):: point
     if(((point%x>=self%x .and. point%x<(self%x + self%width)) .and. (point%y>=self%y .and. point%y<(self%y + self%width))) .eqv. .false.) then
         return
     end if
     if (self%isDivided .eqv. .true.) then
+        call addPoints(self%NW, point)
+        call addPoints(self%NE, point)
+        call addPoints(self%SE, point)
+        call addPoints(self%SW, point)
+    else
+        if (self%pointsCount < 4) then
+            self%pointsArray(self%pointsCount + 1) = point
+            self%pointsCount = self%pointsCount + 1
+        else
+            call subdivide(self)
+            call addPoints(self%NW, point)
+            call addPoints(self%NE, point)
+            call addPoints(self%SE, point)
+            call addPoints(self%SW, point)
+    
+        end if
     end if
+
 
 
 
 end subroutine addPoints
 
+function createTree() result(tree)
+    type(QuadTree) :: tree
+end function createTree
+
 subroutine subdivide(self)
     type(QuadTree), intent(inout) :: self
-    type(QuadTree), target :: nw, ne, se, sw
+    type(QuadTree), pointer :: nw, ne, se, sw
 
 
     self%NW => nw
