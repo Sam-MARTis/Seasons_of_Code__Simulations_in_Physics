@@ -30,9 +30,13 @@ contains
 
     recursive subroutine addPoints(self, point)
         type(QuadTree), intent(inout) :: self
-        type(Points), intent(inout) :: point
+        type(Points), intent(in) :: point
 
-        if (((point%x >= self%x .and. point%x < (self%x + self%width)) .and. (point%y >= self%y .and. point%y < (self%y + self%height))) .eqv. .false.) then
+        logical:: isPointXInBounds, isPointYInBounds
+        isPointXInBounds = (point%x >= self%x .and. point%x < (self%x + self%width))
+        isPointYInBounds = (point%y >= self%y .and. point%y < (self%y + self%height))
+
+        if ((isPointXInBounds .and. isPointYInBounds) .eqv. .false.) then
             return
         end if
 
@@ -54,6 +58,32 @@ contains
             end if
         end if
     end subroutine addPoints
+
+    function doesIntersect(tree, rx1, ry1, width, height) result (isIntersecting)
+        type(QuadTree):: tree
+        real :: rx1, ry1, width, height, rx2, ry2, x1, y1, x2, y2
+        logical:: isIntersecting
+
+        x1 = tree%x
+        x2 = x1+tree%width
+
+        y1 = tree%y
+        y2 = y1+tree%width
+
+        rx2 = rx1 + width
+        ry2 = ry1 + height
+
+        isIntersecting = (((x2 >= rx1) .and. (x1 <= rx2)) .and. ((y1 <= ry2) .and. (y2 >= ry1)))
+
+    end function
+
+    recursive function queryTreeRegionForPoints(tree, x, y, width, height) result (pointsArray)
+        type(QuadTree):: tree
+        real :: x, y, width, height
+        type(Points), dimension(:), allocatable:: pointsArray
+    
+
+    end function
 
     subroutine subdivide(self)
         type(QuadTree), intent(inout) :: self
@@ -108,3 +138,44 @@ contains
     end subroutine deallocateQuadTree
 
 end module custom_types
+
+
+program main
+    use custom_types
+    implicit none
+
+    type(QuadTree) :: root
+    type(Points) :: point
+    point%x = 200
+    point%y = 200
+    point%vx = 10
+    point%vy = 10
+    point%size = 2
+
+
+
+    root%x = 0
+    root%y = 0
+    root%width = 400
+    root%height = 400
+
+    call addPoints(root, point)
+    call addPoints(root, Points(1, 1, 1, 1, 1))
+    call addPoints(root, Points(2, 2, 2, 2, 2))
+    call addPoints(root, Points(3, 3, 3, 3, 3))
+    call addPoints(root, Points(4, 4, 4, 4, 4))
+    call addPoints(root, Points(4, 5, 4, 4, 4))
+
+    
+
+    print *, root%pointsArray(1)%x
+    print *, root%pointsArray(1)%y
+    print *, root%isDivided
+    print *, root%NW%pointsCount
+    print *, root%NE%pointsCount
+    print *, root%SE%pointsCount
+    print *, root%SW%pointsCount
+
+
+    call deallocateQuadTree(root)
+end program main
