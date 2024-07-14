@@ -23,6 +23,9 @@ module custom_types
         ! Data
         logical :: isDivided = .false.
         integer :: pointsCount = 0
+        integer :: pointsContained = 0
+        real :: massContained = 0
+        real, dimension(2):: com = [0, 0]
         type(Points), dimension(4) :: pointsArray
     end type QuadTree
 
@@ -39,6 +42,12 @@ contains
         if ((isPointXInBounds .and. isPointYInBounds) .eqv. .false.) then
             return
         end if
+        self%pointsContained = self%pointsContained + 1
+
+        self%com(1) = (self%com(1) * self%massContained + point%mass * point%x) / (self%massContained + point%mass)
+        self%com(2) = (self%com(2) * self%massContained + point%mass * point%y) / (self%massContained + point%mass)
+
+        self%massContained = self%massContained + point%mass
 
         if (self%isDivided) then
             call addPoints(self%NW, point)
@@ -73,9 +82,11 @@ contains
         rx2 = rx1 + width
         ry2 = ry1 + height
 
-        isIntersecting = (((x2 >= rx1) .and. (x1 <= rx2)) .and. ((y1 <= ry2) .and. (y2 >= ry1)))
+        isIntersecting = (((x2 >= rx1) .and. (x1 < rx2)) .and. ((y1 < ry2) .and. (y2 >= ry1)))
 
     end function
+
+
     function inRange(x, y, rx1, ry1, width, height) result (isInside)
         real :: rx1, ry1, width, height, x, y
         logical:: isInside, isXIn, isYIn
