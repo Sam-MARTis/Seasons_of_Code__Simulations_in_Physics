@@ -82,19 +82,23 @@ contains
         real :: rx1, ry1, width, height
         type(Points), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
         integer:: i, n
+        type(Points), dimension(tree%pointsCount):: pointsArr
         if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
             allocate(pointsArray(0))
             return
         end if
 
         if (tree%isDivided .eqv. .false.) then
-            pointsArray = tree%pointsArray
+            do i=1, tree%pointsCount
+                pointsArr(i) = tree%pointsArray(i)
+            end do
+            pointsArray = pointsArr
             return
         else
             pointsArrayNW = queryTreeRegionForPoints(tree%NW, rx1, ry1, width, height)
             pointsArrayNE = queryTreeRegionForPoints(tree%NE, rx1, ry1, width, height)
             pointsArraySE = queryTreeRegionForPoints(tree%SE, rx1, ry1, width, height)
-            pointsArraySW = queryTreeRegionForPoints(tree%NW, rx1, ry1, width, height)
+            pointsArraySW = queryTreeRegionForPoints(tree%SW, rx1, ry1, width, height)
             n = size(pointsArrayNW) + size(pointsArrayNE) + size(pointsArraySE) + size(pointsArraySW)
             allocate(pointsArray(n))
             do i = 1, size(pointsArrayNW)
@@ -121,6 +125,13 @@ contains
 
     subroutine subdivide(self)
         type(QuadTree), intent(inout) :: self
+        integer :: i
+        if (self%isDivided) then
+            error stop "QuadTree is already divided"
+        end if
+        if (self%pointsCount < 4) then
+            error stop "QuadTree has less than 4 points. Not supposed to subdivide"
+        end if
 
         allocate(self%NW)
         allocate(self%NE)
@@ -148,6 +159,13 @@ contains
         self%SW%height = self%height / 2
 
         self%isDivided = .true.
+
+        do i = 1, self%pointsCount
+            call addPoints(self%NW, self%pointsArray(i))
+            call addPoints(self%NE, self%pointsArray(i))
+            call addPoints(self%SE, self%pointsArray(i))
+            call addPoints(self%SW, self%pointsArray(i))
+        end do
     end subroutine subdivide
 
     recursive subroutine deallocateQuadTree(self)
@@ -180,6 +198,8 @@ program main
 
     type(QuadTree) :: root
     type(Points) :: point
+    type(Points), dimension(:), allocatable:: pointsArray
+    integer:: i
     point%x = 200
     point%y = 200
     point%vx = 10
@@ -193,22 +213,34 @@ program main
     root%width = 400
     root%height = 400
 
+
+
+
     call addPoints(root, point)
-    call addPoints(root, Points(1, 1, 1, 1, 1))
+    ! call addPoints(root, Points(1, 1, 1, 1, 1))
     call addPoints(root, Points(2, 2, 2, 2, 2))
     call addPoints(root, Points(3, 3, 3, 3, 3))
     call addPoints(root, Points(4, 4, 4, 4, 4))
     call addPoints(root, Points(4, 5, 4, 4, 4))
 
+    pointsArray= queryTreeRegionForPoints(root, 0.0, 0.0, 100.0, 100.0)
+
     
 
-    print *, root%pointsArray(1)%x
-    print *, root%pointsArray(1)%y
-    print *, root%isDivided
-    print *, root%NW%pointsCount
-    print *, root%NE%pointsCount
-    print *, root%SE%pointsCount
-    print *, root%SW%pointsCount
+    ! print *, root%pointsArray(1)%x
+    ! print *, root%pointsArray(1)%y
+    ! print *, root%isDivided
+    ! print *, root%pointsCount
+    ! print *, root%NW%pointsCount
+    ! print *, root%NE%pointsCount
+    ! print *, root%SE%pointsCount
+    ! print *, root%SW%pointsCount
+    do i = 1, size(pointsArray)
+        print *, pointsArray(i)%x
+        print *, pointsArray(i)%y
+    end do  
+    print *, size(pointsArray)
+
 
 
     call deallocateQuadTree(root)
