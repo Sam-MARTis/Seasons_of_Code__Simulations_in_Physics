@@ -82,7 +82,6 @@ contains
         isXIn = (x>=rx1 .and. x<(rx1+width))
         isYIn = (y>ry1 .and. y<(ry1+height))
         isInside = isXIn .and. isYIn
-        
 
     end function
 
@@ -90,19 +89,36 @@ contains
         type(QuadTree):: tree
         real :: rx1, ry1, width, height
         type(Points), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
-        integer:: i, n
-        type(Points), dimension(tree%pointsCount):: pointsArr
+        integer:: i, n, validPointsCount, counter
+        ! type(Points), dimension(tree%pointsCount):: pointsArr
         if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
             allocate(pointsArray(0))
             return
         end if
 
         if (tree%isDivided .eqv. .false.) then
+            validPointsCount = 0
+            counter = 1
+
+            ! do i=1, tree%pointsCount
+            !     pointsArr(i) = tree%pointsArray(i)
+            ! end do
+            ! pointsArray = pointsArr
+            ! return
             do i=1, tree%pointsCount
-                pointsArr(i) = tree%pointsArray(i)
+                if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height)) then
+                    validPointsCount = validPointsCount + 1
+                end if
             end do
-            pointsArray = pointsArr
-            return
+
+            allocate(pointsArray(validPointsCount))
+            do i=1, tree%pointsCount
+
+                if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height) .eqv. .true.) then
+                    pointsArray(counter) = tree%pointsArray(i)
+                    counter = counter + 1
+                end if
+            end do
         else
             pointsArrayNW = queryTreeRegionForPoints(tree%NW, rx1, ry1, width, height)
             pointsArrayNE = queryTreeRegionForPoints(tree%NE, rx1, ry1, width, height)
@@ -230,9 +246,9 @@ program main
     call addPoints(root, Points(2, 2, 2, 2, 2))
     call addPoints(root, Points(3, 3, 3, 3, 3))
     call addPoints(root, Points(4, 4, 4, 4, 4))
-    call addPoints(root, Points(4, 20, 4, 4, 4))
+    call addPoints(root, Points(4, 20, 200, 4, 4))
 
-    pointsArray= queryTreeRegionForPoints(root, 0.0, 0.0, 15.0, 10.0)
+    pointsArray= queryTreeRegionForPoints(root, 19.0, 190.0, 21.0, 10.1)
 
     
 
