@@ -1,5 +1,7 @@
 module custom_types
+    
     implicit none
+    integer, parameter:: PointsPerNode = 4
 
     type :: Points
         real :: mass = 1
@@ -26,7 +28,7 @@ module custom_types
         integer :: pointsContained = 0
         real :: massContained = 0
         real, dimension(2):: com = [0, 0]
-        type(Points), dimension(4) :: pointsArray
+        type(Points), dimension(PointsPerNode) :: pointsArray
     end type QuadTree
 
 contains
@@ -55,7 +57,7 @@ contains
             call addPoints(self%SE, point)
             call addPoints(self%SW, point)
         else
-            if (self%pointsCount < 4) then
+            if (self%pointsCount < PointsPerNode) then
                 self%pointsArray(self%pointsCount + 1) = point
                 self%pointsCount = self%pointsCount + 1
             else
@@ -165,8 +167,8 @@ contains
         if (self%isDivided) then
             error stop "QuadTree is already divided"
         end if
-        if (self%pointsCount < 4) then
-            error stop "QuadTree has less than 4 points. Not supposed to subdivide"
+        if (self%pointsCount < PointsPerNode) then
+            error stop "QuadTree node has less points than its maximum node capacity. Not supposed to subdivide"
         end if
 
         allocate(self%NW)
