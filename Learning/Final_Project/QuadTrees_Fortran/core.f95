@@ -76,6 +76,15 @@ contains
         isIntersecting = (((x2 >= rx1) .and. (x1 <= rx2)) .and. ((y1 <= ry2) .and. (y2 >= ry1)))
 
     end function
+    function inRange(x, y, rx1, ry1, width, height) result (isInside)
+        real :: rx1, ry1, width, height, x, y
+        logical:: isInside, isXIn, isYIn
+        isXIn = (x>=rx1 .and. x<(rx1+width))
+        isYIn = (y>ry1 .and. y<(ry1+height))
+        isInside = isXIn .and. isYIn
+        
+
+    end function
 
     recursive function queryTreeRegionForPoints(tree, rx1, ry1, width, height) result (pointsArray)
         type(QuadTree):: tree
@@ -217,13 +226,13 @@ program main
 
 
     call addPoints(root, point)
-    ! call addPoints(root, Points(1, 1, 1, 1, 1))
+    call addPoints(root, Points(1, 1, 1, 1, 1))
     call addPoints(root, Points(2, 2, 2, 2, 2))
     call addPoints(root, Points(3, 3, 3, 3, 3))
     call addPoints(root, Points(4, 4, 4, 4, 4))
-    call addPoints(root, Points(4, 5, 4, 4, 4))
+    call addPoints(root, Points(4, 20, 4, 4, 4))
 
-    pointsArray= queryTreeRegionForPoints(root, 0.0, 0.0, 100.0, 100.0)
+    pointsArray= queryTreeRegionForPoints(root, 0.0, 0.0, 15.0, 10.0)
 
     
 
