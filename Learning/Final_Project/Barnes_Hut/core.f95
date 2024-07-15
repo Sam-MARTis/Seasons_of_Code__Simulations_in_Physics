@@ -72,10 +72,15 @@ contains
         end if
     end subroutine addPoints
 
-    function constructQuadTree(pointsToAdd) result(tree)
+    function constructQuadTree(pointsToAdd, x, y, width, height) result(tree)
         type(QuadTree):: tree
+        real:: x, y, width, height
         type(Points), dimension(:)::pointsToAdd
         integer:: i
+        tree%x = x
+        tree%y = y
+        tree%width = width
+        tree%height = height
         do i = 1, size(pointsToAdd)
             call addPoints(tree, pointsToAdd(i))
         end do
@@ -114,7 +119,6 @@ contains
         real :: rx1, ry1, width, height
         type(Points), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
         integer:: i, n, validPointsCount, counter
-        ! type(Points), dimension(tree%pointsCount):: pointsArr
         if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
             allocate(pointsArray(0))
             return
@@ -123,12 +127,6 @@ contains
         if (tree%isDivided .eqv. .false.) then
             validPointsCount = 0
             counter = 1
-
-            ! do i=1, tree%pointsCount
-            !     pointsArr(i) = tree%pointsArray(i)
-            ! end do
-            ! pointsArray = pointsArr
-            ! return
             do i=1, tree%pointsCount
                 if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height)) then
                     validPointsCount = validPointsCount + 1
@@ -137,7 +135,6 @@ contains
 
             allocate(pointsArray(validPointsCount))
             do i=1, tree%pointsCount
-
                 if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height) .eqv. .true.) then
                     pointsArray(counter) = tree%pointsArray(i)
                     counter = counter + 1
@@ -162,15 +159,10 @@ contains
             do i = 1, size(pointsArraySW)
                 pointsArray(size(pointsArrayNW)+size(pointsArrayNE)+size(pointsArraySE)+i) = pointsArraySW(i)
             end do
-
-            return
-
         end if
 
-        
-    
 
-    end function queryTreeRegionForPoints
+    end function queryTreeRegionForPoints !Not needed for barnes_hut
 
     subroutine subdivide(self)
         type(QuadTree), intent(inout) :: self
@@ -317,22 +309,23 @@ module Barnes_Hut
         end do
     end subroutine updatePositionAndVelocities
 
-    subroutine updateStep(pointsArrayMain, G, theta_max, dt)
+    subroutine updateStep(pointsArrayMain, x, y, width, height, G, theta_max, dt)
         type(Points), dimension(:), intent(inout):: pointsArrayMain
+        real, intent(in):: x, y, width, height
         real, intent(in):: G, theta_max, dt
 
         type(QuadTree):: mainTree
+        real, dimension(2):: forceValueTemp
         integer:: i
 
-        mainTree = constructQuadTree(pointsArrayMain)
+        mainTree = constructQuadTree(pointsArrayMain, x, y, width, height)
 
         do i = 1, size(pointsArrayMain)
-            call findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
+            forceValueTemp = findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
+            pointsArrayMain(i)%forceX = forceValueTemp(1)
+            pointsArrayMain(i)%forceY = forceValueTemp(2)
         end do
 
-        do i = 1, size(pointsArrayMain)
-            call findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
-        end do
 
         call updatePositionAndVelocities(pointsArrayMain, dt)
 
