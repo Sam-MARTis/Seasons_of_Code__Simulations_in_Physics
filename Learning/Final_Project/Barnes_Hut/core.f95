@@ -295,9 +295,20 @@ module Barnes_Hut
         integer:: i
 
         do i = 1, size(pointsToUpdate)
+            ! print *, "Forces"
+            ! print *, pointsToUpdate(i)%forceX
+            ! print *, pointsToUpdate(i)%forceY
+            ! print *, "End forces"
+
+            ! print *, "Old x"
+            ! print *, pointsToUpdate(i)%x
+            
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
             pointsToUpdate(i)%vx = pointsToUpdate(i)%vx + pointsToUpdate(i)%forceX*dt
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
+            ! print *, "New x"
+            ! print *, pointsToUpdate(i)%x
+            ! print *, "End x"
 
             pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
             pointsToUpdate(i)%vy = pointsToUpdate(i)%vy + pointsToUpdate(i)%forceY*dt
@@ -324,10 +335,20 @@ module Barnes_Hut
             forceValueTemp = findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
             pointsArrayMain(i)%forceX = forceValueTemp(1)
             pointsArrayMain(i)%forceY = forceValueTemp(2)
+            ! print *, forceValueTemp
         end do
 
-
+        ! print *, "Before updating"
+        ! print *, pointsArrayMain(1)%x
+        ! print *, pointsArrayMain(1)%y
         call updatePositionAndVelocities(pointsArrayMain, dt)
+        ! print *, "After updating"
+        ! print *, pointsArrayMain(1)%x
+        ! print *, pointsArrayMain(1)%y
+        
+        ! print *, "Ended update check"
+
+
 
         call deallocateQuadTree(mainTree)
         
@@ -337,54 +358,47 @@ end module Barnes_Hut
 
 program main
     use custom_types
+    use Barnes_Hut
     implicit none
 
-    type(QuadTree) :: root
-    type(Points) :: point
+    ! type(QuadTree) :: root
+    type(Points) :: point1, point2
     type(Points), dimension(:), allocatable:: pointsArray
-    integer:: i
-    point%x = 200
-    point%y = 200
-    point%vx = 10
-    point%vy = 10
-    point%size = 2
+    ! integer:: i
+
+    point1%mass = 50
+    point1%x = 149.2
+    point1%y = 160.1
+    point1%vx = 0
+    point1%vy = 0
+    point1%size = 2
+
+    point2%mass = 50
+    point2%x = 145.3
+    point2%y = 160.1
+    point2%vx = 0
+    point2%vy = 0
+    point2%size = 2
+
+    ! pointsArray = [point1, point2]
+
+    allocate(pointsArray(2)) !For some reason this doesn't pass by reference? 
+    pointsArray(1) = point1  !Change is array particles will not reflect on originals...huh
+    pointsArray(2) = point2
+
+    print *, pointsArray(1)%x
+    print *, pointsArray(1)%y
+
+    call updateStep(pointsArray, 0.0, 0.0, 400.0, 400.0, 100.0, 1.5, 0.01)
+    ! print *, "Point array val1 x after main code update"
+    ! print *, pointsArray(1)%x
 
 
+    ! print *, pointsArray
 
-    root%x = 0
-    root%y = 0
-    root%width = 400
-    root%height = 400
-
-
-
-
-    call addPoints(root, point)
-    call addPoints(root, Points(1, 1, 1, 1, 1))
-    call addPoints(root, Points(2, 2, 2, 2, 2))
-    call addPoints(root, Points(3, 3, 3, 3, 3))
-    call addPoints(root, Points(4, 4, 4, 4, 4))
-    call addPoints(root, Points(4, 20, 200, 4, 4))
-
-    pointsArray= queryTreeRegionForPoints(root, 19.0, 190.0, 21.0, 10.1)
-
+    print *, pointsArray(1)%x
+    print *, pointsArray(1)%y
+    print *, point1%x
+    print *, point1%y
     
-
-    ! print *, root%pointsArray(1)%x
-    ! print *, root%pointsArray(1)%y
-    ! print *, root%isDivided
-    ! print *, root%pointsCount 
-    ! print *, root%NW%pointsCount
-    ! print *, root%NE%pointsCount
-    ! print *, root%SE%pointsCount
-    ! print *, root%SW%pointsCount
-    do i = 1, size(pointsArray)
-        print *, pointsArray(i)%x
-        print *, pointsArray(i)%y
-    end do  
-    print *, size(pointsArray)
-
-
-
-    call deallocateQuadTree(root)
 end program main
