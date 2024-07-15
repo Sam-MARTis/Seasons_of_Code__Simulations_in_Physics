@@ -79,7 +79,7 @@ contains
         do i = 1, size(pointsToAdd)
             call addPoints(tree, pointsToAdd(i))
         end do
-    end function
+    end function constructQuadTree
 
     function doesIntersect(tree, rx1, ry1, width, height) result (isIntersecting)
         type(QuadTree):: tree
@@ -97,7 +97,7 @@ contains
 
         isIntersecting = (((x2 >= rx1) .and. (x1 < rx2)) .and. ((y1 < ry2) .and. (y2 >= ry1)))
 
-    end function
+    end function doesIntersect
 
 
     function inRange(x, y, rx1, ry1, width, height) result (isInside)
@@ -107,7 +107,7 @@ contains
         isYIn = (y>ry1 .and. y<(ry1+height))
         isInside = isXIn .and. isYIn
 
-    end function
+    end function inRange
 
     recursive function queryTreeRegionForPoints(tree, rx1, ry1, width, height) result (pointsArray)
         type(QuadTree):: tree
@@ -170,7 +170,7 @@ contains
         
     
 
-    end function
+    end function queryTreeRegionForPoints
 
     subroutine subdivide(self)
         type(QuadTree), intent(inout) :: self
@@ -315,7 +315,7 @@ module Barnes_Hut
             pointsToUpdate(i)%forceX = 0
             pointsToUpdate(i)%forceY = 0
         end do
-    end subroutine
+    end subroutine updatePositionAndVelocities
 
     subroutine updateStep(pointsArrayMain, G, theta_max, dt)
         type(Points), dimension(:), intent(inout):: pointsArrayMain
@@ -338,7 +338,7 @@ module Barnes_Hut
 
         call deallocateQuadTree(mainTree)
         
-    end subroutine
+    end subroutine updateStep
 end module Barnes_Hut
 
 
