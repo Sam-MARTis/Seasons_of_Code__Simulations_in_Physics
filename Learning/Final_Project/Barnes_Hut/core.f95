@@ -232,6 +232,32 @@ contains
 
 end module custom_types
 
+module Random_Tools
+    implicit none
+    contains
+    subroutine random_stduniform(u)
+        implicit none
+        real,intent(out) :: u
+        real :: r
+        call random_number(r)
+        u = 1 - r
+     end subroutine random_stduniform
+
+    function random_uniform(a,b) result(x)
+        implicit none
+        real,intent(in) :: a,b
+        ! real,intent(out) :: x
+        real::x
+        real :: u = 3
+        call random_stduniform(u)
+        x = (b-a)*u + a
+     end function random_uniform
+end module Random_Tools
+
+
+
+
+
 
 module Barnes_Hut 
 
