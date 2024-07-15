@@ -72,6 +72,15 @@ contains
         end if
     end subroutine addPoints
 
+    function constructQuadTree(pointsToAdd) result(tree)
+        type(QuadTree):: tree
+        type(Points), dimension(:)::pointsToAdd
+        integer:: i
+        do i = 1, size(pointsToAdd)
+            call addPoints(tree, pointsToAdd(i))
+        end do
+    end function
+
     function doesIntersect(tree, rx1, ry1, width, height) result (isIntersecting)
         type(QuadTree):: tree
         real :: rx1, ry1, width, height, rx2, ry2, x1, y1, x2, y2
@@ -238,15 +247,6 @@ module Barnes_Hut
     
     contains
 
-    function constructQuadTree(pointsToAdd) result(tree)
-        type(QuadTree):: tree
-        type(Points), dimension(:)::pointsToAdd
-        integer:: i
-        do i = 1, size(pointsToAdd)
-            call addPoints(tree, pointsToAdd(i))
-        end do
-    end function
-
     recursive function findForceOnParticle(point, tree, G, theta_max) result(forceVal)
     type(Points):: point
     type(QuadTree):: tree
@@ -256,16 +256,19 @@ module Barnes_Hut
     integer:: i
     forceVal = [0,0]
 
-    dx = tree%com(1) - point%x
+    dx = tree%com(1) - point%x 
     dy = tree%com(2) - point%y
     distance = sqrt(dx**2 + dy**2)
-    if (distance == 0) then
-        forceVal(1) = 0
-        forceVal(2) = 0
-        return
+    ! if (distance == 0) then
+    !     forceVal(1) = 0
+    !     forceVal(2) = 0
+    !     return
+    ! end if
+    if (distance==0) then
+        theta = theta_max + 1 !If distance is 0, then theta will be greater than theta_max
+    else
+        theta = tree%width / distance !Im assuming square quad tree.
     end if
-
-    theta = tree%width / distance !Im assuming square quad tree.
 
     if(theta>theta_max) then
         if(tree%isDivided .eqv. .true.) then
@@ -287,13 +290,34 @@ module Barnes_Hut
             
         end if
     else 
+        !Since this is running, distance shouldnt be 0
         forceVal(1) = G * point%mass * tree%massContained * dx / distance**3
         forceVal(2) = G * point%mass * tree%massContained * dy / distance**3
-
     end if
     end function findForceOnParticle
 
-    ! subroutine updatePositions
+
+    subroutine updatePositionAndVelocities(pointsToUpdate, dt)
+        real, intent(in):: dt
+        type(Points), dimension(:), intent(inout):: pointsToUpdate
+        integer:: i
+
+        do i = 1, size(pointsToUpdate)
+            pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
+            pointsToUpdate(i)%vx = pointsToUpdate(i)%vx + pointsToUpdate(i)%forceX*dt
+            pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
+
+            pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
+            pointsToUpdate(i)%vy = pointsToUpdate(i)%vy + pointsToUpdate(i)%forceY*dt
+            pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
+
+
+            pointsToUpdate(i)%forceX = 0
+            pointsToUpdate(i)%forceY = 0
+        end do
+    end subroutine
+
+    
 end module Barnes_Hut
 
 
@@ -335,7 +359,7 @@ program main
     ! print *, root%pointsArray(1)%x
     ! print *, root%pointsArray(1)%y
     ! print *, root%isDivided
-    ! print *, root%pointsCount
+    ! print *, root%pointsCount 
     ! print *, root%NW%pointsCount
     ! print *, root%NE%pointsCount
     ! print *, root%SE%pointsCount
