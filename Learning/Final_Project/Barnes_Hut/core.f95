@@ -231,12 +231,21 @@ contains
 
 end module custom_types
 
+module Barnes_Hut 
 
-module Barnes_Hut
     use custom_types
     implicit none
     
     contains
+
+    function constructQuadTree(pointsToAdd) result(tree)
+        type(QuadTree):: tree
+        type(Points), dimension(:)::pointsToAdd
+        integer:: i
+        do i = 1, size(pointsToAdd)
+            call addPoints(tree, pointsToAdd(i))
+        end do
+    end function
 
     recursive function findForceOnParticle(point, tree, G, theta_max) result(forceVal)
     type(Points):: point
@@ -245,6 +254,7 @@ module Barnes_Hut
     real, dimension(2):: forceVal
     real:: theta, distance, dx, dy
     integer:: i
+    forceVal = [0,0]
 
     dx = tree%com(1) - point%x
     dy = tree%com(2) - point%y
@@ -276,15 +286,14 @@ module Barnes_Hut
             end do
             
         end if
+    else 
+        forceVal(1) = G * point%mass * tree%massContained * dx / distance**3
+        forceVal(2) = G * point%mass * tree%massContained * dy / distance**3
+
     end if
-
-
-
-
-    !Ok, step one, calculate theta of tree
-
-
     end function findForceOnParticle
+
+    ! subroutine updatePositions
 end module Barnes_Hut
 
 
