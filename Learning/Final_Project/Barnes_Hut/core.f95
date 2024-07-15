@@ -3,7 +3,7 @@ module custom_types
     implicit none
     integer, parameter:: PointsPerNode = 4
 
-    type :: Points
+    type :: Body
         real :: mass = 1
         real :: x = 200
         real :: y = 200
@@ -12,7 +12,7 @@ module custom_types
         real :: size = 2
         real:: forceX = 0
         real:: forceY = 0
-    end type Points
+    end type Body
 
     type :: QuadTree
         ! Properties
@@ -30,14 +30,14 @@ module custom_types
         integer :: pointsContained = 0
         real :: massContained = 0
         real, dimension(2):: com = [0, 0]
-        type(Points), dimension(PointsPerNode) :: pointsArray
+        type(Body), dimension(PointsPerNode) :: pointsArray
     end type QuadTree
 
 contains
 
     recursive subroutine addPoints(self, point)
         type(QuadTree), intent(inout) :: self
-        type(Points), intent(in) :: point
+        type(Body), intent(in) :: point
 
         logical:: isPointXInBounds, isPointYInBounds
         isPointXInBounds = (point%x >= self%x .and. point%x < (self%x + self%width))
@@ -75,7 +75,7 @@ contains
     function constructQuadTree(pointsToAdd, x, y, width, height) result(tree)
         type(QuadTree):: tree
         real:: x, y, width, height
-        type(Points), dimension(:)::pointsToAdd
+        type(Body), dimension(:)::pointsToAdd
         integer:: i
         tree%x = x
         tree%y = y
@@ -117,7 +117,7 @@ contains
     recursive function queryTreeRegionForPoints(tree, rx1, ry1, width, height) result (pointsArray)
         type(QuadTree):: tree
         real :: rx1, ry1, width, height
-        type(Points), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
+        type(Body), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
         integer:: i, n, validPointsCount, counter
         if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
             allocate(pointsArray(0))
@@ -232,6 +232,7 @@ contains
 
 end module custom_types
 
+
 module Barnes_Hut 
 
     use custom_types
@@ -240,12 +241,14 @@ module Barnes_Hut
     contains
 
     recursive function findForceOnParticle(point, tree, G, theta_max) result(forceVal)
-    type(Points):: point
+    type(Body):: point
     type(QuadTree):: tree
     real:: G, theta_max
     real, dimension(2):: forceVal
     real:: theta, distance, dx, dy
     integer:: i
+    real::  forceAngle
+    real:: forceMax = 1000
     forceVal = [0,0]
 
     dx = tree%com(1) - point%x 
@@ -276,24 +279,28 @@ module Barnes_Hut
                 if (distance == 0) then
                     cycle
                 end if
-                forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * dx / distance**3
-                forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * dy / distance**3
+                forceAngle = atan2(dy, dx)
+                forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
+                forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
             end do
             
         end if
     else 
         !Since this is running, distance shouldnt be 0
-        forceVal(1) = G * point%mass * tree%massContained * dx / distance**3
-        forceVal(2) = G * point%mass * tree%massContained * dy / distance**3
+        forceAngle = atan2(dy, dx)
+        forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
+        forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
+
     end if
 
-    if(isnan(forceVal(1)) .or. isnan(forceVal(2))) then
-        forceVal(1) = 0
-        forceVal(2) = 0
-    end if
-    if((forceVal(1)**2 + forceVal(2)**2)>10000) then
-        forceVal(1) = 0
-        forceVal(2) = 0
+    ! if(isnan(forceVal(1)) .or. isnan(forceVal(2))) then
+    !     forceVal(1) = 0
+    !     forceVal(2) = 0
+    ! end if
+    if((forceVal(1)**2 + forceVal(2)**2)>forceMax**2) then
+        forceAngle = atan2(forceVal(2), forceVal(1))
+        forceVal(1) = forceMax * cos(forceAngle)
+        forceVal(2) = forceMax * sin(forceAngle)
     end if
 
 
@@ -304,7 +311,7 @@ module Barnes_Hut
 
     subroutine updatePositionAndVelocities(pointsToUpdate, dt)
         real, intent(in):: dt
-        type(Points), dimension(:), intent(inout):: pointsToUpdate
+        type(Body), dimension(:), intent(inout):: pointsToUpdate
         integer:: i
 
         do i = 1, size(pointsToUpdate)
@@ -334,7 +341,7 @@ module Barnes_Hut
     end subroutine updatePositionAndVelocities
 
     subroutine updateStep(pointsArrayMain, x, y, width, height, G, theta_max, dt)
-        type(Points), dimension(:), intent(inout):: pointsArrayMain
+        type(Body), dimension(:), intent(inout):: pointsArrayMain
         real, intent(in):: x, y, width, height
         real, intent(in):: G, theta_max, dt
 
@@ -375,30 +382,37 @@ program main
     implicit none
 
     ! type(QuadTree) :: root
-    type(Points) :: point1, point2
-    type(Points), dimension(:), allocatable:: bodies
+    type(Body) :: point1, point2, point3
+    type(Body), dimension(:), allocatable:: bodies
     real:: dt = 0.01
-    real:: G = 100
+    real:: G = 1000
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
     ! integer:: i
 
-    point1%mass = 50
-    point1%x = 300.2
-    point1%y = 160.1
+    point1%mass = 15
+    point1%x = 200.2
+    point1%y = 165
     point1%vx = 0
-    point1%vy = 0
+    point1%vy = 40
     point1%size = 2
 
-    point2%mass = 50
+    point2%mass = 15
     point2%x = 145.3
     point2%y = 160.1
     point2%vx = 0
-    point2%vy = 0
+    point2%vy = -40
     point2%size = 2
 
-    bodies = [point1, point2]
+    point3%mass = 15
+    point3%x = 200.2
+    point3%y = 305
+    point3%vx = 0
+    point3%vy = 40
+    point3%size = 2
+
+    bodies = [point1, point2, point3]
 
     ! allocate(bodies(2)) !For some reason this doesn't pass by reference? 
     ! bodies(1) = point1  !Change is array particles will not reflect on originals...huh
