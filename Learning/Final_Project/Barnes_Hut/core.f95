@@ -254,6 +254,47 @@ module Random_Tools
      end function random_uniform
 end module Random_Tools
 
+module Body_Tools
+
+    use custom_types
+    use Random_Tools
+
+    implicit none
+    contains
+    function createBody(mass, x, y, vx, vy, size) result(planet)
+        real, intent(in) :: mass, x, y, vx, vy, size
+        type(Body) :: planet
+        planet%mass = mass
+        planet%x = x
+        planet%y = y
+        planet%vx = vx
+        planet%vy = vy
+        planet%size = size 
+        planet%forceX = 0.0
+        planet%forceY = 0.0    
+    end function createBody
+
+
+    function createBodies(n) result(bodies)
+        integer, intent(in) :: n
+        type(Body), dimension(n):: bodies
+        integer:: i
+        real:: r1, r2, r3, r4, r5, r6
+        do i = 1, n
+            r1 = random_uniform(1.0, 10.0)
+        r2 = random_uniform(50.0, 750.0)
+        r3 = random_uniform(50.0, 750.0)
+        r4 = random_uniform(-1.0, 1.0)
+        r5 = random_uniform(-1.0, 1.0)
+        ! r6 = random_uniform(5.0, 10.0)
+        r6 = r1/4
+        bodies(i) = createBody(r1, r2, r3, r4, r5, r6)
+        end do
+    end function createBodies
+
+
+
+end module Body_Tools
 
 
 
@@ -405,40 +446,45 @@ end module Barnes_Hut
 program main
     use custom_types
     use Barnes_Hut
+    use Body_Tools
     implicit none
 
+
+    integer, parameter:: noOfBodies = 3
+
     ! type(QuadTree) :: root
-    type(Body) :: point1, point2, point3
-    type(Body), dimension(:), allocatable:: bodies
-    real:: dt = 0.01
-    real:: G = 1000
+    type(Body), dimension(noOfBodies):: bodies
+    real:: dt = 0.001
+    real:: G = 100
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
     ! integer:: i
 
-    point1%mass = 15
-    point1%x = 200.2
-    point1%y = 165
-    point1%vx = 0
-    point1%vy = 40
-    point1%size = 2
+    ! point1%mass = 15
+    ! point1%x = 200.2
+    ! point1%y = 165
+    ! point1%vx = 0
+    ! point1%vy = 40
+    ! point1%size = 2
 
-    point2%mass = 15
-    point2%x = 145.3
-    point2%y = 160.1
-    point2%vx = 0
-    point2%vy = -40
-    point2%size = 2
+    ! point2%mass = 15
+    ! point2%x = 145.3
+    ! point2%y = 160.1
+    ! point2%vx = 0
+    ! point2%vy = -40
+    ! point2%size = 2
 
-    point3%mass = 15
-    point3%x = 200.2
-    point3%y = 305
-    point3%vx = 0
-    point3%vy = 40
-    point3%size = 2
+    ! point3%mass = 15
+    ! point3%x = 200.2
+    ! point3%y = 305
+    ! point3%vx = 0
+    ! point3%vy = 40
+    ! point3%size = 2
 
-    bodies = [point1, point2, point3]
+    ! bodies = [point1, point2, point3]
+
+    bodies = createBodies(noOfBodies)
 
     ! allocate(bodies(2)) !For some reason this doesn't pass by reference? 
     ! bodies(1) = point1  !Change is array particles will not reflect on originals...huh
