@@ -317,7 +317,28 @@ module Barnes_Hut
         end do
     end subroutine
 
-    
+    subroutine updateStep(pointsArrayMain, G, theta_max, dt)
+        type(Points), dimension(:), intent(inout):: pointsArrayMain
+        real, intent(in):: G, theta_max, dt
+
+        type(QuadTree):: mainTree
+        integer:: i
+
+        mainTree = constructQuadTree(pointsArrayMain)
+
+        do i = 1, size(pointsArrayMain)
+            call findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
+        end do
+
+        do i = 1, size(pointsArrayMain)
+            call findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
+        end do
+
+        call updatePositionAndVelocities(pointsArrayMain, dt)
+
+        call deallocateQuadTree(mainTree)
+        
+    end subroutine
 end module Barnes_Hut
 
 
