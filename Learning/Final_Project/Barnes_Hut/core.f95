@@ -363,7 +363,12 @@ program main
 
     ! type(QuadTree) :: root
     type(Points) :: point1, point2
-    type(Points), dimension(:), allocatable:: pointsArray
+    type(Points), dimension(:), allocatable:: bodies
+    real:: dt = 0.01
+    real:: G = 100
+    real:: time = 0
+    integer:: i, j
+    real:: theta_max = 1.5
     ! integer:: i
 
     point1%mass = 50
@@ -380,25 +385,53 @@ program main
     point2%vy = 0
     point2%size = 2
 
-    ! pointsArray = [point1, point2]
+    bodies = [point1, point2]
 
-    allocate(pointsArray(2)) !For some reason this doesn't pass by reference? 
-    pointsArray(1) = point1  !Change is array particles will not reflect on originals...huh
-    pointsArray(2) = point2
+    ! allocate(bodies(2)) !For some reason this doesn't pass by reference? 
+    ! bodies(1) = point1  !Change is array particles will not reflect on originals...huh
+    ! bodies(2) = point2
 
-    print *, pointsArray(1)%x
-    print *, pointsArray(1)%y
+    ! print *, bodies(1)%x
+    ! print *, bodies(1)%y
 
-    call updateStep(pointsArray, 0.0, 0.0, 400.0, 400.0, 100.0, 1.5, 0.01)
-    ! print *, "Point array val1 x after main code update"
-    ! print *, pointsArray(1)%x
+    ! call updateStep(bodies, 0.0, 0.0, 400.0, 400.0, 100.0, 1.5, 0.01)
+    ! ! print *, "Point array val1 x after main code update"
+    ! ! print *, pointsArray(1)%x
 
 
-    ! print *, pointsArray
+    ! ! print *, pointsArray
 
-    print *, pointsArray(1)%x
-    print *, pointsArray(1)%y
-    print *, point1%x
-    print *, point1%y
+    ! print *, bodies(1)%x
+    ! print *, bodies(1)%y
+    ! print *, point1%x
+    ! print *, point1%y
+
+
+
+    open(1, file='solutionValues.txt', status='old')
+    write(1,*) size(bodies), dt, G
+
+    do i = 1, size(bodies)
+        write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
+    end do
+
+    do i= 1, 20000
+        call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
+        time = time + dt
+        do j=1, size(bodies)
+            write(1, *) time, bodies(j)%x, bodies(j)%y
+        end do
+    end do
+
+    close(1)
+
+    call execute_command_line("./sfml-app")
+
+
+
+    
+
+
+    
     
 end program main
