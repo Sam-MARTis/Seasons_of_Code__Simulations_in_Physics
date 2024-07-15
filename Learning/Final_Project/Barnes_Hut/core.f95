@@ -286,6 +286,19 @@ module Barnes_Hut
         forceVal(1) = G * point%mass * tree%massContained * dx / distance**3
         forceVal(2) = G * point%mass * tree%massContained * dy / distance**3
     end if
+
+    if(isnan(forceVal(1)) .or. isnan(forceVal(2))) then
+        forceVal(1) = 0
+        forceVal(2) = 0
+    end if
+    if((forceVal(1)**2 + forceVal(2)**2)>10000) then
+        forceVal(1) = 0
+        forceVal(2) = 0
+    end if
+
+
+
+
     end function findForceOnParticle
 
 
@@ -372,7 +385,7 @@ program main
     ! integer:: i
 
     point1%mass = 50
-    point1%x = 149.2
+    point1%x = 300.2
     point1%y = 160.1
     point1%vx = 0
     point1%vy = 0
