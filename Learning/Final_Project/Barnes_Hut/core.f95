@@ -483,7 +483,7 @@ program main
 
 
 
-    integer, parameter:: noOfBodies = 20
+    integer, parameter:: noOfBodies = 1000
 
     ! type(QuadTree) :: root
     type(Body), dimension(noOfBodies):: bodies
@@ -517,10 +517,7 @@ program main
 
     ! bodies = [point1, point2, point3]
 
-    bodies = createBodies(noOfBodies)
-    do i = 1, size(bodies)
-        print *, bodies(i)%x
-    end do
+
 
     ! allocate(bodies(2)) !For some reason this doesn't pass by reference? 
     ! bodies(1) = point1  !Change is array particles will not reflect on originals...huh
@@ -541,7 +538,7 @@ program main
     ! print *, point1%x
     ! print *, point1%y
 
-
+! 
 
     open(1, file='solutionValues.txt', status='old')
     write(1,*) size(bodies), dt, G
@@ -550,7 +547,7 @@ program main
         write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
     end do
 
-    do i= 1, 20000
+    do i= 1, 10
         call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
         time = time + dt
         do j=1, size(bodies)

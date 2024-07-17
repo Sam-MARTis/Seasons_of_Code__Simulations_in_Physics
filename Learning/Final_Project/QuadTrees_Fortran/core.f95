@@ -3,14 +3,14 @@ module custom_types
     implicit none
     integer, parameter:: PointsPerNode = 4
 
-    type :: Points
+    type :: Body
         real :: mass = 1
         real :: x = 200
         real :: y = 200
         real :: vx = 10
         real :: vy = 10
         real :: size = 2
-    end type Points
+    end type Body
 
     type :: QuadTree
         ! Properties
@@ -28,14 +28,14 @@ module custom_types
         integer :: pointsContained = 0
         real :: massContained = 0
         real, dimension(2):: com = [0, 0]
-        type(Points), dimension(PointsPerNode) :: pointsArray
+        type(Body), dimension(PointsPerNode) :: pointsArray
     end type QuadTree
 
 contains
 
     recursive subroutine addPoints(self, point)
         type(QuadTree), intent(inout) :: self
-        type(Points), intent(in) :: point
+        type(Body), intent(in) :: point
 
         logical:: isPointXInBounds, isPointYInBounds
         isPointXInBounds = (point%x >= self%x .and. point%x < (self%x + self%width))
@@ -101,7 +101,7 @@ contains
     recursive function queryTreeRegionForPoints(tree, rx1, ry1, width, height) result (pointsArray)
         type(QuadTree):: tree
         real :: rx1, ry1, width, height
-        type(Points), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
+        type(Body), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
         integer:: i, n, validPointsCount, counter
         ! type(Points), dimension(tree%pointsCount):: pointsArr
         if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
@@ -235,8 +235,8 @@ program main
     implicit none
 
     type(QuadTree) :: root
-    type(Points) :: point
-    type(Points), dimension(:), allocatable:: pointsArray
+    type(Body) :: point
+    type(Body), dimension(:), allocatable:: bodies
     integer:: i
     point%x = 200
     point%y = 200
@@ -255,13 +255,13 @@ program main
 
 
     call addPoints(root, point)
-    call addPoints(root, Points(1, 1, 1, 1, 1))
-    call addPoints(root, Points(2, 2, 2, 2, 2))
-    call addPoints(root, Points(3, 3, 3, 3, 3))
-    call addPoints(root, Points(4, 4, 4, 4, 4))
-    call addPoints(root, Points(4, 20, 200, 4, 4))
+    call addPoints(root, Body(1, 1, 1, 1, 1))
+    call addPoints(root, Body(2, 2, 2, 2, 2))
+    call addPoints(root, Body(3, 3, 3, 3, 3))
+    call addPoints(root, Body(4, 4, 4, 4, 4))
+    call addPoints(root, Body(4, 20, 200, 4, 4))
 
-    pointsArray= queryTreeRegionForPoints(root, 19.0, 190.0, 21.0, 10.1)
+    bodies= queryTreeRegionForPoints(root, 19.0, 190.0, 21.0, 10.1)
 
     
 
@@ -273,11 +273,11 @@ program main
     ! print *, root%NE%pointsCount
     ! print *, root%SE%pointsCount
     ! print *, root%SW%pointsCount
-    do i = 1, size(pointsArray)
-        print *, pointsArray(i)%x
-        print *, pointsArray(i)%y
+    do i = 1, size(bodies)
+        print *, bodies(i)%x
+        print *, bodies(i)%y
     end do  
-    print *, size(pointsArray)
+    print *, size(bodies)
 
 
 
