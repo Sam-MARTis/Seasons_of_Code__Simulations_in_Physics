@@ -287,7 +287,7 @@ module Body_Tools
         r4 = random_uniform(-1.0, 1.0)
         r5 = random_uniform(-1.0, 1.0)
         ! r6 = random_uniform(5.0, 10.0)
-        r6 = r1/4
+        r6 = r1
         bodies(i) = createBody(r1, r2, r3, r4, r5, r6)
         end do
     end function createBodies
@@ -306,6 +306,29 @@ module Barnes_Hut
     implicit none
     
     contains
+    subroutine makePointsInBoundry(pointsArr, x1, y1, x2, y2)
+        type(Body), dimension(:), intent(inout):: pointsArr
+        real, intent(in):: x1, x2, y1, y2
+        integer:: i
+        do i= 1, size(pointsArr)
+            if(pointsArr(i)%x > x2) then
+                pointsArr%x = x2
+            end if
+            if(pointsArr(i)%y > y2) then
+                pointsArr%y = y2
+            end if
+            if(pointsArr(i)%x < x1) then
+                pointsArr%x = x1
+            end if
+            if(pointsArr(i)%y < y1) then
+                pointsArr%y = y1
+            end if
+
+        end do
+
+    end subroutine makePointsInBoundry
+
+
 
     recursive function findForceOnParticle(point, tree, G, theta_max) result(forceVal)
     type(Body):: point
@@ -412,9 +435,16 @@ module Barnes_Hut
         real, intent(in):: x, y, width, height
         real, intent(in):: G, theta_max, dt
 
+        
+
         type(QuadTree):: mainTree
         real, dimension(2):: forceValueTemp
         integer:: i
+        real:: x1, x2, y1, y2
+        x1 = 50
+        x2 = 750
+        y1 = 50
+        y2 = 750
 
         mainTree = constructQuadTree(pointsArrayMain, x, y, width, height)
 
@@ -429,6 +459,8 @@ module Barnes_Hut
         ! print *, pointsArrayMain(1)%x
         ! print *, pointsArrayMain(1)%y
         call updatePositionAndVelocities(pointsArrayMain, dt)
+
+        ! call makePointsInBoundry(pointsArrayMain, 50.0, 50.0, 750.0, 750.0)
         ! print *, "After updating"
         ! print *, pointsArrayMain(1)%x
         ! print *, pointsArrayMain(1)%y
@@ -450,12 +482,13 @@ program main
     implicit none
 
 
-    integer, parameter:: noOfBodies = 3
+
+    integer, parameter:: noOfBodies = 20
 
     ! type(QuadTree) :: root
     type(Body), dimension(noOfBodies):: bodies
-    real:: dt = 0.001
-    real:: G = 100
+    real:: dt = 0.01
+    real:: G = 1000
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
@@ -485,6 +518,9 @@ program main
     ! bodies = [point1, point2, point3]
 
     bodies = createBodies(noOfBodies)
+    do i = 1, size(bodies)
+        print *, bodies(i)%x
+    end do
 
     ! allocate(bodies(2)) !For some reason this doesn't pass by reference? 
     ! bodies(1) = point1  !Change is array particles will not reflect on originals...huh
@@ -521,7 +557,6 @@ program main
             write(1, *) time, bodies(j)%x, bodies(j)%y
         end do
     end do
-
     close(1)
 
     call execute_command_line("./sfml-app")
