@@ -70,6 +70,20 @@ contains
         end if
     end subroutine addPoints
 
+    function constructQuadTree(pointsToAdd, x, y, width, height) result(tree)
+        type(QuadTree):: tree
+        real:: x, y, width, height
+        type(Body), dimension(:)::pointsToAdd
+        integer:: i
+        tree%x = x
+        tree%y = y
+        tree%width = width
+        tree%height = height
+        do i = 1, size(pointsToAdd)
+            call addPoints(tree, pointsToAdd(i))
+        end do
+    end function constructQuadTree
+
     function doesIntersect(tree, rx1, ry1, width, height) result (isIntersecting)
         type(QuadTree):: tree
         real :: rx1, ry1, width, height, rx2, ry2, x1, y1, x2, y2
@@ -86,7 +100,7 @@ contains
 
         isIntersecting = (((x2 >= rx1) .and. (x1 < rx2)) .and. ((y1 < ry2) .and. (y2 >= ry1)))
 
-    end function
+    end function doesIntersect
 
 
     function inRange(x, y, rx1, ry1, width, height) result (isInside)
@@ -96,7 +110,7 @@ contains
         isYIn = (y>ry1 .and. y<(ry1+height))
         isInside = isXIn .and. isYIn
 
-    end function
+    end function inRange
 
     recursive function queryTreeRegionForPoints(tree, rx1, ry1, width, height) result (pointsArray)
         type(QuadTree):: tree
@@ -159,7 +173,7 @@ contains
         
     
 
-    end function
+    end function queryTreeRegionForPoints
 
     subroutine subdivide(self)
         type(QuadTree), intent(inout) :: self
