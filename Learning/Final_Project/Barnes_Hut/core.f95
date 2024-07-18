@@ -324,7 +324,7 @@ module Barnes_Hut
     real:: G, theta_max
     real, dimension(2):: forceVal
     real:: theta, distance, dx, dy
-    integer:: i
+    integer:: i, i2
     real::  forceAngle
     real:: forceMax = 1000
     forceVal = [0,0]
@@ -345,21 +345,26 @@ module Barnes_Hut
 
     if(theta>theta_max) then
         if(tree%isDivided .eqv. .true.) then
-            forceVal = findForceOnParticle(point, tree%NW, G, theta_max)
-            forceVal = forceVal + findForceOnParticle(point, tree%NE, G, theta_max)
-            forceVal = forceVal + findForceOnParticle(point, tree%SE, G, theta_max)
-            forceVal = forceVal + findForceOnParticle(point, tree%SW, G, theta_max)
+            forceVal = [0, 0]
+            do i2 = 1, 4
+                forceVal = forceVal + findForceOnParticle(point, tree%subTrees(i2), G, theta_max)
+            end do
+
+            ! forceVal = findForceOnParticle(point, tree%NW, G, theta_max)
+            ! forceVal = forceVal + findForceOnParticle(point, tree%NE, G, theta_max)
+            ! forceVal = forceVal + findForceOnParticle(point, tree%SE, G, theta_max)
+            ! forceVal = forceVal + findForceOnParticle(point, tree%SW, G, theta_max)
         else
+            forceVal = [0, 0]
             do i=1, tree%pointsCount
                 dx = tree%pointsArray(i)%x - point%x
                 dy = tree%pointsArray(i)%y - point%y
                 distance = sqrt(dx**2 + dy**2)
-                if (distance == 0) then
-                    cycle
+                if((distance==0) .eqv. .false.) then
+                    forceAngle = atan2(dy, dx)
+                    forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
+                    forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
                 end if
-                forceAngle = atan2(dy, dx)
-                forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
-                forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
             end do
             
         end if
@@ -438,6 +443,8 @@ module Barnes_Hut
 
         do i = 1, size(pointsArrayMain)
             forceValueTemp = findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
+            !Find Force on particle function is causing the error
+            ! forceValueTemp = [1,2]
             pointsArrayMain(i)%forceX = forceValueTemp(1)
             pointsArrayMain(i)%forceY = forceValueTemp(2)
             ! print *, forceValueTemp
@@ -457,7 +464,7 @@ module Barnes_Hut
 
 
 
-        call deallocateQuadTree(mainTree)
+        ! call deallocateQuadTree(mainTree)
         
     end subroutine updateStep
 end module Barnes_Hut
@@ -471,7 +478,7 @@ program main
 
 
 
-    integer, parameter:: noOfBodies = 20000
+    integer, parameter:: noOfBodies = 2000
     ! type(QuadTree) :: root
     type(Body), dimension(noOfBodies):: bodies
     real:: dt = 0.01
@@ -487,12 +494,12 @@ program main
     end do
 
     do i=1, 10
-        print *, bodies%x
+        print *, bodies(i)%x
     end do
 
-    ! do i = 1, size(bodies)
-    !     call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, 100.0, 1.5, 0.01)
-    ! end do
+    do i = 1, size(bodies)
+        call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, 100.0, 1.5, 0.01)
+    end do
 
     ! integer:: i
 
