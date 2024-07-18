@@ -323,9 +323,14 @@ module Barnes_Hut
     type(QuadTree):: tree
     real:: G, theta_max
     real, dimension(2):: forceVal
-    real:: theta, distance, dx, dy
-    integer:: i, i2
-    real::  forceAngle
+    real:: theta = 00
+    real:: distance = 0
+    real:: dx = 0
+    real:: dy = 0
+
+    integer:: i = 1
+    integer:: i2 = 0
+    real::  forceAngle = 0
     real:: forceMax = 1000
     forceVal = [0,0]
 
