@@ -270,12 +270,12 @@ module Body_Tools
         real:: r1, r2, r3, r4, r5, r6
         do i = 1, n
             r1 = random_uniform(1.0, 10.0)
-        r2 = random_uniform(50.0, 750.0)
-        r3 = random_uniform(50.0, 750.0)
+        r2 = random_uniform(0.0, 800.0)
+        r3 = random_uniform(0.0, 800.0)
         r4 = random_uniform(-1.0, 1.0)
         r5 = random_uniform(-1.0, 1.0)
         ! r6 = random_uniform(5.0, 10.0)
-        r6 = r1
+        r6 = r1/6
         bodies(i) = createBody(r1, r2, r3, r4, r5, r6)
         end do
     end function createBodies
@@ -300,16 +300,16 @@ module Barnes_Hut
         integer:: i
         do i= 1, size(pointsArr)
             if(pointsArr(i)%x > x2) then
-                pointsArr%x = x2
+                pointsArr(i)%x = x2
             end if
             if(pointsArr(i)%y > y2) then
-                pointsArr%y = y2
+                pointsArr(i)%y = y2
             end if
             if(pointsArr(i)%x < x1) then
-                pointsArr%x = x1
+                pointsArr(i)%x = x1
             end if
             if(pointsArr(i)%y < y1) then
-                pointsArr%y = y1
+                pointsArr(i)%y = y1
             end if
 
         end do
@@ -323,15 +323,12 @@ module Barnes_Hut
     type(QuadTree):: tree
     real:: G, theta_max
     real, dimension(2):: forceVal
-    real:: theta = 00
-    real:: distance = 0
-    real:: dx = 0
-    real:: dy = 0
-
-    integer:: i = 1
+    real:: theta, distance, dx, dy
+    ! integer:: i = 1
     integer:: i2 = 0
+    integer:: i1
     real::  forceAngle = 0
-    real:: forceMax = 1000
+    real:: forceMax = 0.1
     forceVal = [0,0]
 
     dx = tree%com(1) - point%x 
@@ -361,14 +358,14 @@ module Barnes_Hut
             ! forceVal = forceVal + findForceOnParticle(point, tree%SW, G, theta_max)
         else
             forceVal = [0, 0]
-            do i=1, tree%pointsCount
-                dx = tree%pointsArray(i)%x - point%x
-                dy = tree%pointsArray(i)%y - point%y
+            do i1=1, tree%pointsCount
+                dx = tree%pointsArray(i1)%x - point%x
+                dy = tree%pointsArray(i1)%y - point%y
                 distance = sqrt(dx**2 + dy**2)
                 if((distance==0) .eqv. .false.) then
                     forceAngle = atan2(dy, dx)
-                    forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
-                    forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
+                    forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i1)%mass * cos(forceAngle) / distance**2
+                    forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i1)%mass * sin(forceAngle) / distance**2
                 end if
             end do
             
@@ -376,8 +373,8 @@ module Barnes_Hut
     else 
         !Since this is running, distance shouldnt be 0
         forceAngle = atan2(dy, dx)
-        forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
-        forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
+        forceVal(1) = forceVal(1) + G * point%mass * tree%massContained * cos(forceAngle) / distance**2
+        forceVal(2) = forceVal(2) + G * point%mass * tree%massContained * sin(forceAngle) / distance**2
 
     end if
 
@@ -448,6 +445,8 @@ module Barnes_Hut
 
         do i = 1, size(pointsArrayMain)
             forceValueTemp = findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
+            print *, forceValueTemp
+            print *, ""
             !Find Force on particle function is causing the error
             ! forceValueTemp = [1,2]
             pointsArrayMain(i)%forceX = forceValueTemp(1)
@@ -460,7 +459,8 @@ module Barnes_Hut
         ! print *, pointsArrayMain(1)%y
         call updatePositionAndVelocities(pointsArrayMain, dt)
 
-        ! call makePointsInBoundry(pointsArrayMain, 50.0, 50.0, 750.0, 750.0)
+
+        call makePointsInBoundry(pointsArrayMain, 50.0, 50.0, 700.0, 700.0)
         ! print *, "After updating"
         ! print *, pointsArrayMain(1)%x
         ! print *, pointsArrayMain(1)%y
@@ -483,28 +483,28 @@ program main
 
 
 
-    integer, parameter:: noOfBodies = 2000
+    integer, parameter:: noOfBodies = 1000
     ! type(QuadTree) :: root
     type(Body), dimension(noOfBodies):: bodies
     real:: dt = 0.01
-    real:: G = 1000
+    real:: G = 0.1
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
     type(QuadTree):: root
     bodies = createBodies(noOfBodies)
 
-    do i= 1, size(bodies)
-        call addPoints(root, bodies(i))
-    end do
+    ! do i= 1, size(bodies)
+    !     call addPoints(root, bodies(i))
+    ! end do
 
-    do i=1, 10
-        print *, bodies(i)%x
-    end do
+    ! do i=1, 100
+    !     print *, bodies(i)%x
+    ! end do
 
-    do i = 1, size(bodies)
-        call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, 100.0, 1.5, 0.01)
-    end do
+    ! do i = 1, 1000
+    !     call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, 100.0, 1.5, 0.01)
+    ! end do
 
     ! integer:: i
 
@@ -554,23 +554,23 @@ program main
 
 ! 
 
-    ! open(1, file='solutionValues.txt', status='old')
-    ! write(1,*) size(bodies), dt, G
+    open(1, file='solutionValues.txt', status='old')
+    write(1,*) size(bodies), dt, G
 
-    ! do i = 1, size(bodies)
-    !     write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
-    ! end do
+    do i = 1, size(bodies)
+        write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
+    end do
 
-    ! do i= 1, 2
-    !     call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
-    !     time = time + dt
-    !     do j=1, size(bodies)
-    !         write(1, *) time, bodies(j)%x, bodies(j)%y
-    !     end do
-    ! end do
-    ! close(1)
+    do i= 1, 20000
+        call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
+        time = time + dt
+        do j=1, size(bodies)
+            write(1, *) time, bodies(j)%x, bodies(j)%y
+        end do
+    end do
+    close(1)
 
-    ! call execute_command_line("./sfml-app")
+    call execute_command_line("./sfml-app")
 
 
 
