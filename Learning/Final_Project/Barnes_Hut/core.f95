@@ -328,7 +328,7 @@ module Barnes_Hut
     integer:: i2 = 0
     integer:: i1
     real::  forceAngle = 0
-    real:: forceMax = 0.1
+    real:: forceMax = 10
     forceVal = [0,0]
 
     dx = tree%com(1) - point%x 
@@ -378,14 +378,15 @@ module Barnes_Hut
 
     end if
 
-    ! if(isnan(forceVal(1)) .or. isnan(forceVal(2))) then
-    !     forceVal(1) = 0
-    !     forceVal(2) = 0
-    ! end if
+    if(isnan(forceVal(1)) .or. isnan(forceVal(2))) then
+        forceVal(1) = 0
+        forceVal(2) = 0
+    end if
     if((forceVal(1)**2 + forceVal(2)**2)>forceMax**2) then
-        forceAngle = atan2(forceVal(2), forceVal(1))
-        forceVal(1) = forceMax * cos(forceAngle)
-        forceVal(2) = forceMax * sin(forceAngle)
+        ! forceAngle = atan2(forceVal(2), forceVal(1))
+        ! forceVal(1) = forceMax * cos(forceAngle)
+        ! forceVal(2) = forceMax * sin(forceAngle)
+        forceVal = [0.0, 0.0]
     end if
 
 
@@ -445,8 +446,8 @@ module Barnes_Hut
 
         do i = 1, size(pointsArrayMain)
             forceValueTemp = findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
-            print *, forceValueTemp
-            print *, ""
+            ! print *, forceValueTemp
+            ! print *, ""
             !Find Force on particle function is causing the error
             ! forceValueTemp = [1,2]
             pointsArrayMain(i)%forceX = forceValueTemp(1)
@@ -561,7 +562,7 @@ program main
         write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
     end do
 
-    do i= 1, 20000
+    do i= 1, 10000
         call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
         time = time + dt
         do j=1, size(bodies)

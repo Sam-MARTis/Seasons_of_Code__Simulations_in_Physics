@@ -15,16 +15,10 @@ module custom_types
     end type Body
 
     type :: QuadTree
-        ! Properties
         real :: x, y, width, height
 
-        ! Pointers to subtrees
-        type(QuadTree), pointer :: NW => null()
-        type(QuadTree), pointer :: NE => null()
-        type(QuadTree), pointer :: SE => null()
-        type(QuadTree), pointer :: SW => null()
+        type(QuadTree), dimension(:), allocatable:: subTrees
 
-        ! Data
         logical :: isDivided = .false.
         integer :: pointsCount = 0
         integer :: pointsContained = 0
@@ -38,6 +32,7 @@ contains
     recursive subroutine addPoints(self, point)
         type(QuadTree), intent(inout) :: self
         type(Body), intent(in) :: point
+        integer:: iterVal
 
         logical:: isPointXInBounds, isPointYInBounds
         isPointXInBounds = (point%x >= self%x .and. point%x < (self%x + self%width))
@@ -54,20 +49,18 @@ contains
         self%massContained = self%massContained + point%mass
 
         if (self%isDivided) then
-            call addPoints(self%NW, point)
-            call addPoints(self%NE, point)
-            call addPoints(self%SE, point)
-            call addPoints(self%SW, point)
+            do iterVal = 1, 4
+                call addPoints(self%subTrees(iterVal), point)
+            end do
         else
             if (self%pointsCount < PointsPerNode) then
                 self%pointsArray(self%pointsCount + 1) = point
                 self%pointsCount = self%pointsCount + 1
             else
                 call subdivide(self)
-                call addPoints(self%NW, point)
-                call addPoints(self%NE, point)
-                call addPoints(self%SE, point)
-                call addPoints(self%SW, point)
+                do iterVal = 1, 4
+                    call addPoints(self%subTrees(iterVal), point)
+                end do
             end if
         end if
     end subroutine addPoints
@@ -114,9 +107,66 @@ contains
 
     end function inRange
 
+    recursive function queryTreeRegionForPoints(tree, rx1, ry1, width, height) result (pointsArray)
+        type(QuadTree):: tree
+        real :: rx1, ry1, width, height
+        type(Body), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
+        integer:: i, n, validPointsCount, counter
+        if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
+            allocate(pointsArray(0))
+            return
+        end if
+
+        if (tree%isDivided .eqv. .false.) then
+            validPointsCount = 0
+            counter = 1
+
+            do i=1, tree%pointsCount
+                if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height)) then
+                    validPointsCount = validPointsCount + 1
+                end if
+            end do
+
+            allocate(pointsArray(validPointsCount))
+            do i=1, tree%pointsCount
+
+                if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height) .eqv. .true.) then
+                    pointsArray(counter) = tree%pointsArray(i)
+                    counter = counter + 1
+                end if
+            end do
+        else
+            pointsArrayNW = queryTreeRegionForPoints(tree%subTrees(1), rx1, ry1, width, height)
+            pointsArrayNE = queryTreeRegionForPoints(tree%subTrees(2), rx1, ry1, width, height)
+            pointsArraySE = queryTreeRegionForPoints(tree%subTrees(3), rx1, ry1, width, height)
+            pointsArraySW = queryTreeRegionForPoints(tree%subTrees(4), rx1, ry1, width, height)
+            n = size(pointsArrayNW) + size(pointsArrayNE) + size(pointsArraySE) + size(pointsArraySW)
+            allocate(pointsArray(n))
+            do i = 1, size(pointsArrayNW)
+                pointsArray(i) = pointsArrayNW(i)
+            end do
+            do i = 1, size(pointsArrayNE)
+                pointsArray(size(pointsArrayNW)+i) = pointsArrayNE(i)
+            end do
+            do i = 1, size(pointsArraySE)
+                pointsArray(size(pointsArrayNW)+size(pointsArrayNE)+i) = pointsArraySE(i)
+            end do
+            do i = 1, size(pointsArraySW)
+                pointsArray(size(pointsArrayNW)+size(pointsArrayNE)+size(pointsArraySE)+i) = pointsArraySW(i)
+            end do
+
+            return
+
+        end if
+
+        
+    
+
+    end function queryTreeRegionForPoints
+
     subroutine subdivide(self)
         type(QuadTree), intent(inout) :: self
-        integer :: i
+        integer :: i, iterVal
         if (self%isDivided) then
             error stop "QuadTree is already divided"
         end if
@@ -124,61 +174,36 @@ contains
             error stop "QuadTree node has less points than its maximum node capacity. Not supposed to subdivide"
         end if
 
-        allocate(self%NW)
-        allocate(self%NE)
-        allocate(self%SE)
-        allocate(self%SW)
+        allocate(self%subTrees(4))
 
-        self%NW%x = self%x
-        self%NW%y = self%y
-        self%NW%width = self%width / 2
-        self%NW%height = self%height / 2
+        self%subTrees(1)%x = self%x
+        self%subTrees(1)%y = self%y
+        self%subTrees(1)%width = self%width / 2
+        self%subTrees(1)%height = self%height / 2
 
-        self%NE%x = self%x + self%width / 2
-        self%NE%y = self%y
-        self%NE%width = self%width / 2
-        self%NE%height = self%height / 2
+        self%subTrees(2)%x = self%x + self%width / 2
+        self%subTrees(2)%y = self%y
+        self%subTrees(2)%width = self%width / 2
+        self%subTrees(2)%height = self%height / 2
 
-        self%SE%x = self%x + self%width / 2
-        self%SE%y = self%y + self%height / 2
-        self%SE%width = self%width / 2
-        self%SE%height = self%height / 2
+        self%subTrees(3)%x = self%x + self%width / 2
+        self%subTrees(3)%y = self%y + self%height / 2
+        self%subTrees(3)%width = self%width / 2
+        self%subTrees(3)%height = self%height / 2
 
-        self%SW%x = self%x
-        self%SW%y = self%y + self%height / 2
-        self%SW%width = self%width / 2
-        self%SW%height = self%height / 2
+        self%subTrees(4)%x = self%x
+        self%subTrees(4)%y = self%y + self%height / 2
+        self%subTrees(4)%width = self%width / 2
+        self%subTrees(4)%height = self%height / 2
 
         self%isDivided = .true.
 
         do i = 1, self%pointsCount
-            call addPoints(self%NW, self%pointsArray(i))
-            call addPoints(self%NE, self%pointsArray(i))
-            call addPoints(self%SE, self%pointsArray(i))
-            call addPoints(self%SW, self%pointsArray(i))
+            do iterVal = 1, 4
+                call addPoints(self%subTrees(iterVal), self%pointsArray(i))
+            end do
         end do
     end subroutine subdivide
-
-    recursive subroutine deallocateQuadTree(self)
-        type(QuadTree), intent(inout) :: self
-
-        if (associated(self%NW)) then
-            call deallocateQuadTree(self%NW)
-            deallocate(self%NW)
-        end if
-        if (associated(self%NE)) then
-            call deallocateQuadTree(self%NE)
-            deallocate(self%NE)
-        end if
-        if (associated(self%SE)) then
-            call deallocateQuadTree(self%SE)
-            deallocate(self%SE)
-        end if
-        if (associated(self%SW)) then
-            call deallocateQuadTree(self%SW)
-            deallocate(self%SW)
-        end if
-    end subroutine deallocateQuadTree
 
 end module custom_types
 
@@ -196,7 +221,6 @@ module Random_Tools
     function random_uniform(a,b) result(x)
         implicit none
         real,intent(in) :: a,b
-
         real::x
         real :: u = 3
         call random_stduniform(u)
@@ -232,12 +256,11 @@ module Body_Tools
         real:: r1, r2, r3, r4, r5, r6
         do i = 1, n
             r1 = random_uniform(1.0, 10.0)
-        r2 = random_uniform(50.0, 750.0)
-        r3 = random_uniform(50.0, 750.0)
+        r2 = random_uniform(0.0, 800.0)
+        r3 = random_uniform(0.0, 800.0)
         r4 = random_uniform(-1.0, 1.0)
         r5 = random_uniform(-1.0, 1.0)
-
-        r6 = r1/4
+        r6 = r1/6
         bodies(i) = createBody(r1, r2, r3, r4, r5, r6)
         end do
     end function createBodies
@@ -246,12 +269,39 @@ module Body_Tools
 
 end module Body_Tools
 
+
+
+
+
 module Barnes_Hut 
 
     use custom_types
     implicit none
     
     contains
+    subroutine makePointsInBoundry(pointsArr, x1, y1, x2, y2)
+        type(Body), dimension(:), intent(inout):: pointsArr
+        real, intent(in):: x1, x2, y1, y2
+        integer:: i
+        do i= 1, size(pointsArr)
+            if(pointsArr(i)%x > x2) then
+                pointsArr(i)%x = x2
+            end if
+            if(pointsArr(i)%y > y2) then
+                pointsArr(i)%y = y2
+            end if
+            if(pointsArr(i)%x < x1) then
+                pointsArr(i)%x = x1
+            end if
+            if(pointsArr(i)%y < y1) then
+                pointsArr(i)%y = y1
+            end if
+
+        end do
+
+    end subroutine makePointsInBoundry
+
+
 
     recursive function findForceOnParticle(point, tree, G, theta_max) result(forceVal)
     type(Body):: point
@@ -260,56 +310,65 @@ module Barnes_Hut
     real, dimension(2):: forceVal
     real:: theta, distance, dx, dy
     integer:: i
-    real::  forceAngle
-    real:: forceMax = 1000
-    forceVal = [0,0]
+    real:: forceAngle
+    real:: forceMagnitude
+    real:: forceMax = 500
 
-    dx = tree%com(1) - point%x 
+    forceVal = [0.0, 0.0]
+
+    ! Calculate distance between point and center of mass of the quadtree node
+    dx = tree%com(1) - point%x
     dy = tree%com(2) - point%y
+    distance = sqrt(dx**2 + dy**2)
 
-    if (distance==0) then
+    ! Avoid division by zero
+    if (distance == 0) then
         theta = theta_max + 1
     else
-        theta = tree%width / distance
+        theta = min(tree%width, tree%height) / distance
     end if
 
-    if(theta>theta_max) then
-        if(tree%isDivided .eqv. .true.) then
-            forceVal = findForceOnParticle(point, tree%NW, G, theta_max)
-            forceVal = forceVal + findForceOnParticle(point, tree%NE, G, theta_max)
-            forceVal = forceVal + findForceOnParticle(point, tree%SE, G, theta_max)
-            forceVal = forceVal + findForceOnParticle(point, tree%SW, G, theta_max)
+    ! Determine if we should use the node's COM or recurse
+    if (theta > theta_max) then
+        ! Node is too large, recurse
+        if (tree%isDivided) then
+            do i = 1, 4
+                forceVal = forceVal + findForceOnParticle(point, tree%subTrees(i), G, theta_max)
+            end do
         else
-            do i=1, tree%pointsCount
+            ! Calculate force from each point in this leaf node
+            do i = 1, tree%pointsCount
                 dx = tree%pointsArray(i)%x - point%x
                 dy = tree%pointsArray(i)%y - point%y
                 distance = sqrt(dx**2 + dy**2)
-                if (distance == 0) then
-                    cycle
+
+                if (distance /= 0.0) then
+                    forceMagnitude = G * point%mass * tree%pointsArray(i)%mass / distance**2
+                    forceVal(1) = forceVal(1) + forceMagnitude * dx / distance
+                    forceVal(2) = forceVal(2) + forceMagnitude * dy / distance
                 end if
-                forceAngle = atan2(dy, dx)
-                forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
-                forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
             end do
-            
         end if
-    else 
-        forceAngle = atan2(dy, dx)
-        forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i)%mass * cos(forceAngle) / distance**2
-        forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i)%mass * sin(forceAngle) / distance**2
-
+    else
+        ! Use node's center of mass to calculate force
+        if (distance /= 0.0) then
+            forceMagnitude = G * point%mass * tree%massContained / distance**2
+            forceVal(1) = forceVal(1) + forceMagnitude * dx / distance
+            forceVal(2) = forceVal(2) + forceMagnitude * dy / distance
+        end if
     end if
 
-    if((forceVal(1)**2 + forceVal(2)**2)>forceMax**2) then
-        forceAngle = atan2(forceVal(2), forceVal(1))
-        forceVal(1) = forceMax * cos(forceAngle)
-        forceVal(2) = forceMax * sin(forceAngle)
+    ! Ensure the force is not NaN
+    if (isnan(forceVal(1)) .or. isnan(forceVal(2))) then
+        print *, "Getting NaN values of force"
+        forceVal = [0.0, 0.0]
     end if
 
-
-
-
-    end function findForceOnParticle
+    ! Limit the force if it exceeds forceMax
+    if (forceVal(1)**2 + forceVal(2)**2 > forceMax**2) then
+        forceVal = [0.0, 0.0]
+    end if
+end function findForceOnParticle
 
 
     subroutine updatePositionAndVelocities(pointsToUpdate, dt)
@@ -323,7 +382,6 @@ module Barnes_Hut
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
             pointsToUpdate(i)%vx = pointsToUpdate(i)%vx + pointsToUpdate(i)%forceX*dt
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
-
 
             pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
             pointsToUpdate(i)%vy = pointsToUpdate(i)%vy + pointsToUpdate(i)%forceY*dt
@@ -340,26 +398,32 @@ module Barnes_Hut
         real, intent(in):: x, y, width, height
         real, intent(in):: G, theta_max, dt
 
+        
+
         type(QuadTree):: mainTree
         real, dimension(2):: forceValueTemp
         integer:: i
+        real:: x1, x2, y1, y2
+        x1 = 50
+        x2 = 750
+        y1 = 50
+        y2 = 750
 
         mainTree = constructQuadTree(pointsArrayMain, x, y, width, height)
 
         do i = 1, size(pointsArrayMain)
             forceValueTemp = findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
+            ! forceValueTemp = [0.0, 0.0]
             pointsArrayMain(i)%forceX = forceValueTemp(1)
             pointsArrayMain(i)%forceY = forceValueTemp(2)
-            ! print *, forceValueTemp
+
         end do
 
         call updatePositionAndVelocities(pointsArrayMain, dt)
 
 
+        ! call makePointsInBoundry(pointsArrayMain, 50.0, 50.0, 700.0, 500.0)
 
-
-        call deallocateQuadTree(mainTree)
-        
     end subroutine updateStep
 end module Barnes_Hut
 
@@ -368,23 +432,20 @@ program main
     use custom_types
     use Barnes_Hut
     use Body_Tools
+
     implicit none
 
 
-    integer, parameter:: noOfBodies = 3
 
-    ! type(QuadTree) :: root
+    integer, parameter:: noOfBodies = 2000
     type(Body), dimension(noOfBodies):: bodies
-    real:: dt = 0.001
-    real:: G = 100
+    real:: dt = 0.01
+    real:: G = 0.5
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
-
-
+    type(QuadTree):: root
     bodies = createBodies(noOfBodies)
-
-
 
     open(1, file='solutionValues.txt', status='old')
     write(1,*) size(bodies), dt, G
@@ -393,15 +454,22 @@ program main
         write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
     end do
 
-    do i= 1, 20000
+    do i= 1, 30000
         call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
         time = time + dt
         do j=1, size(bodies)
             write(1, *) time, bodies(j)%x, bodies(j)%y
         end do
     end do
-
     close(1)
+
     call execute_command_line("./sfml-app")
- 
+
+
+
+    
+
+
+    
+    
 end program main
