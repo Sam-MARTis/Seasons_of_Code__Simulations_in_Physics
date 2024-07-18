@@ -483,8 +483,7 @@ program main
 
 
 
-    integer, parameter:: noOfBodies = 1000
-
+    integer, parameter:: noOfBodies = 20000
     ! type(QuadTree) :: root
     type(Body), dimension(noOfBodies):: bodies
     real:: dt = 0.01
@@ -492,6 +491,21 @@ program main
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
+    type(QuadTree):: root
+    bodies = createBodies(noOfBodies)
+
+    do i= 1, size(bodies)
+        call addPoints(root, bodies(i))
+    end do
+
+    do i=1, 10
+        print *, bodies%x
+    end do
+
+    ! do i = 1, size(bodies)
+    !     call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, 100.0, 1.5, 0.01)
+    ! end do
+
     ! integer:: i
 
     ! point1%mass = 15
@@ -540,23 +554,23 @@ program main
 
 ! 
 
-    open(1, file='solutionValues.txt', status='old')
-    write(1,*) size(bodies), dt, G
+    ! open(1, file='solutionValues.txt', status='old')
+    ! write(1,*) size(bodies), dt, G
 
-    do i = 1, size(bodies)
-        write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
-    end do
+    ! do i = 1, size(bodies)
+    !     write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
+    ! end do
 
-    do i= 1, 10
-        call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
-        time = time + dt
-        do j=1, size(bodies)
-            write(1, *) time, bodies(j)%x, bodies(j)%y
-        end do
-    end do
-    close(1)
+    ! do i= 1, 2
+    !     call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
+    !     time = time + dt
+    !     do j=1, size(bodies)
+    !         write(1, *) time, bodies(j)%x, bodies(j)%y
+    !     end do
+    ! end do
+    ! close(1)
 
-    call execute_command_line("./sfml-app")
+    ! call execute_command_line("./sfml-app")
 
 
 
