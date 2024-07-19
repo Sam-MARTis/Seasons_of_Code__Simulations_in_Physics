@@ -312,7 +312,7 @@ module Barnes_Hut
     integer:: i
     real:: forceAngle
     real:: forceMagnitude
-    real:: forceMax = 500
+    real:: forceMax = 2000
 
     forceVal = [0.0, 0.0]
 
@@ -367,6 +367,9 @@ module Barnes_Hut
     ! Limit the force if it exceeds forceMax
     if (forceVal(1)**2 + forceVal(2)**2 > forceMax**2) then
         forceVal = [0.0, 0.0]
+        ! forceAngle = atan2(forceVal(2), forceVal(1))
+        ! forceVal(1) = forceMax * cos(forceAngle)
+        ! forceVal(2) = forceMax * sin(forceAngle)
     end if
 end function findForceOnParticle
 
@@ -437,17 +440,17 @@ program main
 
 
 
-    integer, parameter:: noOfBodies = 2000
+    integer, parameter:: noOfBodies = 5000
     type(Body), dimension(noOfBodies):: bodies
     real:: dt = 0.01
-    real:: G = 0.5
+    real:: G = 2
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
     type(QuadTree):: root
     bodies = createBodies(noOfBodies)
 
-    open(1, file='solutionValues.txt', status='old')
+    open(1, file='objectStates.txt', status='old')
     write(1,*) size(bodies), dt, G
 
     do i = 1, size(bodies)
