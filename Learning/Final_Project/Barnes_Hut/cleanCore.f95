@@ -249,20 +249,59 @@ module Body_Tools
     end function createBody
 
 
-    function createBodies(n) result(bodies)
+    function createBodies(n, G_val, Center_Mass) result(bodies)
         integer, intent(in) :: n
+        real:: G_val, Center_Mass
         type(Body), dimension(n):: bodies
         integer:: i
-        real:: r1, r2, r3, r4, r5, r6
-        do i = 1, n
+        real:: r1, r2, r3, r4, r5, r6, R, angle
+        real:: rx0, ry0, rx1, ry1, xm, ym, K
+        real:: dx, dy, vMag
+        rx0 = 0.0
+        ry0 = 0.0
+        rx1 = 800.0
+        ry1 = 800.0
+
+
+
+        k= (G_val * Center_Mass)**0.5
+
+        xm = (rx0 + rx1)/2.0
+        ym = (ry0 + ry1)/2.0
+
+
+
+
+
+        do i = 1, n-1
+            R = random_uniform(6.0, min(rx1-xm, ry1-ym))
+            angle = random_uniform(0.0, 6.26318531)
             r1 = random_uniform(1.0, 10.0)
-        r2 = random_uniform(0.0, 800.0)
-        r3 = random_uniform(0.0, 800.0)
-        r4 = random_uniform(-1.0, 1.0)
-        r5 = random_uniform(-1.0, 1.0)
-        r6 = r1/6
+        ! r2 = random_uniform(rx0, rx1)
+        ! r3 = random_uniform(ry0, ry1)
+        r2 = xm + R * cos(angle)
+        r3 = ym+ R * sin(angle)
+        ! r4 = random_uniform(-1.0, 1.0)
+        ! r5 = random_uniform(-1.0, 1.0)
+        dx = r2 - xm
+        dy = r3 - ym
+
+        vMag = K*1.0/((dx**2 + dy**2)**0.25)
+    
+        r4 = -vMag*sin(angle)
+        r5 = vMag*cos(angle)
+
+
+        !Adding noide
+        r4 = r4 * random_uniform(0.9, 1.1)
+        r5 = r5 * random_uniform(0.9, 1.1)
+
+
+        
+        r6 = 0.3 + r1/20
         bodies(i) = createBody(r1, r2, r3, r4, r5, r6)
         end do
+        bodies(n) = createBody(Center_Mass, xm, ym, 0.0, 0.0, 4.0)
     end function createBodies
 
 
@@ -279,6 +318,19 @@ module Barnes_Hut
     implicit none
     
     contains
+    function dark_matter_distribution(x, y) result (factorValue)
+        real, intent(in):: x, y
+        real:: factorValue
+        real:: dx, dy
+        dx = (x - 400)/200.0
+        dy = (y - 400)/200.0
+        factorValue = 1 + 5*(1.2**(-((x*y)**2)))
+
+
+    end function dark_matter_distribution
+
+
+
     subroutine makePointsInBoundry(pointsArr, x1, y1, x2, y2)
         type(Body), dimension(:), intent(inout):: pointsArr
         real, intent(in):: x1, x2, y1, y2
@@ -344,6 +396,7 @@ module Barnes_Hut
 
                 if (distance /= 0.0) then
                     forceMagnitude = G * point%mass * tree%pointsArray(i)%mass / distance**2
+                    forceMagnitude = forceMagnitude * dark_matter_distribution(tree%pointsArray(i)%x, tree%pointsArray(i)%y)
                     forceVal(1) = forceVal(1) + forceMagnitude * dx / distance
                     forceVal(2) = forceVal(2) + forceMagnitude * dy / distance
                 end if
@@ -352,7 +405,7 @@ module Barnes_Hut
     else
         ! Use node's center of mass to calculate force
         if (distance /= 0.0) then
-            forceMagnitude = G * point%mass * tree%massContained / distance**2
+            forceMagnitude = G * dark_matter_distribution(tree%com(1), tree%com(2))* point%mass * tree%massContained / distance**2
             forceVal(1) = forceVal(1) + forceMagnitude * dx / distance
             forceVal(2) = forceVal(2) + forceMagnitude * dy / distance
         end if
@@ -383,11 +436,11 @@ end function findForceOnParticle
 
             
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
-            pointsToUpdate(i)%vx = pointsToUpdate(i)%vx + pointsToUpdate(i)%forceX*dt
+            pointsToUpdate(i)%vx = pointsToUpdate(i)%vx + pointsToUpdate(i)%forceX*dt/pointsToUpdate(i)%mass
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
 
             pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
-            pointsToUpdate(i)%vy = pointsToUpdate(i)%vy + pointsToUpdate(i)%forceY*dt
+            pointsToUpdate(i)%vy = pointsToUpdate(i)%vy + pointsToUpdate(i)%forceY*dt/pointsToUpdate(i)%mass
             pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
 
 
@@ -440,15 +493,16 @@ program main
 
 
 
-    integer, parameter:: noOfBodies = 5000
+    integer, parameter:: noOfBodies = 2000
     type(Body), dimension(noOfBodies):: bodies
     real:: dt = 0.01
-    real:: G = 2
+    real:: G = 0.05
+    real:: mainMass = 100000.0
     real:: time = 0
     integer:: i, j
     real:: theta_max = 1.5
     type(QuadTree):: root
-    bodies = createBodies(noOfBodies)
+    bodies = createBodies(noOfBodies, G, mainMass)
 
     open(1, file='objectStates.txt', status='old')
     write(1,*) size(bodies), dt, G
@@ -457,7 +511,7 @@ program main
         write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
     end do
 
-    do i= 1, 30000
+    do i= 1, 50000
         call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
         time = time + dt
         do j=1, size(bodies)
