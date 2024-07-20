@@ -15,13 +15,10 @@ module custom_types
     end type Body
 
     type :: QuadTree
-        ! Properties
         real :: x, y, width, height
 
-        ! Pointers to subtrees
         type(QuadTree), dimension(:), allocatable:: subTrees
 
-        ! Data
         logical :: isDivided = .false.
         integer :: pointsCount = 0
         integer :: pointsContained = 0
@@ -40,10 +37,6 @@ contains
         logical:: isPointXInBounds, isPointYInBounds
         isPointXInBounds = (point%x >= self%x .and. point%x < (self%x + self%width))
         isPointYInBounds = (point%y >= self%y .and. point%y < (self%y + self%height))
-        !First check if point to add is in valid boundry
-        !If yes, then check if tree is divided
-        !If divided, add to subtrees
-        !If not divided, add to self
 
         if ((isPointXInBounds .and. isPointYInBounds) .eqv. .false.) then
             return
@@ -119,7 +112,6 @@ contains
         real :: rx1, ry1, width, height
         type(Body), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
         integer:: i, n, validPointsCount, counter
-        ! type(Points), dimension(tree%pointsCount):: pointsArr
         if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
             allocate(pointsArray(0))
             return
@@ -129,11 +121,6 @@ contains
             validPointsCount = 0
             counter = 1
 
-            ! do i=1, tree%pointsCount
-            !     pointsArr(i) = tree%pointsArray(i)
-            ! end do
-            ! pointsArray = pointsArr
-            ! return
             do i=1, tree%pointsCount
                 if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height)) then
                     validPointsCount = validPointsCount + 1
@@ -234,7 +221,6 @@ module Random_Tools
     function random_uniform(a,b) result(x)
         implicit none
         real,intent(in) :: a,b
-        ! real,intent(out) :: x
         real::x
         real :: u = 3
         call random_stduniform(u)
@@ -263,21 +249,59 @@ module Body_Tools
     end function createBody
 
 
-    function createBodies(n) result(bodies)
-        integer, intent(in) :: n
+    function createBodies(n, G_val, Center_Mass) result(bodies)
+        integer :: n
+        real:: G_val, Center_Mass
         type(Body), dimension(n):: bodies
         integer:: i
-        real:: r1, r2, r3, r4, r5, r6
-        do i = 1, n
+        real:: r1, r2, r3, r4, r5, r6, R, angle
+        real:: rx0, ry0, rx1, ry1, xm, ym, K
+        real:: dx, dy, vMag
+        rx0 = 0.0
+        ry0 = 0.0
+        rx1 = 800.0
+        ry1 = 800.0
+
+
+
+        k= (G_val * Center_Mass)**0.5
+
+        xm = (rx0 + rx1)/2.0
+        ym = (ry0 + ry1)/2.0
+
+
+
+
+
+        do i = 1, n-1
+            R = random_uniform(6.0, min(rx1-xm, ry1-ym))
+            angle = random_uniform(0.0, 6.26318531)
             r1 = random_uniform(1.0, 10.0)
-        r2 = random_uniform(0.0, 800.0)
-        r3 = random_uniform(0.0, 800.0)
-        r4 = random_uniform(-1.0, 1.0)
-        r5 = random_uniform(-1.0, 1.0)
-        ! r6 = random_uniform(5.0, 10.0)
-        r6 = r1/6
+        ! r2 = random_uniform(rx0, rx1)
+        ! r3 = random_uniform(ry0, ry1)
+        r2 = xm + R * cos(angle)
+        r3 = ym+ R * sin(angle)
+        ! r4 = random_uniform(-1.0, 1.0)
+        ! r5 = random_uniform(-1.0, 1.0)
+        dx = r2 - xm
+        dy = r3 - ym
+
+        vMag = K*1.0/((dx**2 + dy**2)**0.25)
+    
+        r4 = -vMag*sin(angle)
+        r5 = vMag*cos(angle)
+
+
+        !Adding noide
+        r4 = r4 * random_uniform(0.9, 1.1)
+        r5 = r5 * random_uniform(0.9, 1.1)
+
+
+        
+        r6 = 0.3 + r1/20
         bodies(i) = createBody(r1, r2, r3, r4, r5, r6)
         end do
+        bodies(n) = createBody(Center_Mass, xm, ym, 0.0, 0.0, 4.0)
     end function createBodies
 
 
@@ -294,6 +318,19 @@ module Barnes_Hut
     implicit none
     
     contains
+    function dark_matter_distribution(x, y) result (factorValue)
+        real, intent(in):: x, y
+        real:: factorValue
+        real:: dx, dy
+        dx = (x - 400)/200.0
+        dy = (y - 400)/200.0
+        factorValue = 1 + 5*(1.2**(-((x*y)**2)))
+
+
+    end function dark_matter_distribution
+
+
+
     subroutine makePointsInBoundry(pointsArr, x1, y1, x2, y2)
         type(Body), dimension(:), intent(inout):: pointsArr
         real, intent(in):: x1, x2, y1, y2
@@ -324,75 +361,70 @@ module Barnes_Hut
     real:: G, theta_max
     real, dimension(2):: forceVal
     real:: theta, distance, dx, dy
-    ! integer:: i = 1
-    integer:: i2 = 0
-    integer:: i1
-    real::  forceAngle = 0
-    real:: forceMax = 10
-    forceVal = [0,0]
+    integer:: i
+    real:: forceAngle
+    real:: forceMagnitude
+    real:: forceMax = 2000
 
-    dx = tree%com(1) - point%x 
+    forceVal = [0.0, 0.0]
+
+    ! Calculate distance between point and center of mass of the quadtree node
+    dx = tree%com(1) - point%x
     dy = tree%com(2) - point%y
     distance = sqrt(dx**2 + dy**2)
-    ! if (distance == 0) then
-    !     forceVal(1) = 0
-    !     forceVal(2) = 0
-    !     return
-    ! end if
-    if (distance==0) then
-        theta = theta_max + 1 !If distance is 0, then theta will be greater than theta_max
+
+    ! Avoid division by zero
+    if (distance == 0) then
+        theta = theta_max + 1
     else
-        theta = tree%width / distance !Im assuming square quad tree.
+        theta = min(tree%width, tree%height) / distance
     end if
 
-    if(theta>theta_max) then
-        if(tree%isDivided .eqv. .true.) then
-            forceVal = [0, 0]
-            do i2 = 1, 4
-                forceVal = forceVal + findForceOnParticle(point, tree%subTrees(i2), G, theta_max)
+    ! Determine if we should use the node's COM or recurse
+    if (theta > theta_max) then
+        ! Node is too large, recurse
+        if (tree%isDivided) then
+            do i = 1, 4
+                forceVal = forceVal + findForceOnParticle(point, tree%subTrees(i), G, theta_max)
             end do
-
-            ! forceVal = findForceOnParticle(point, tree%NW, G, theta_max)
-            ! forceVal = forceVal + findForceOnParticle(point, tree%NE, G, theta_max)
-            ! forceVal = forceVal + findForceOnParticle(point, tree%SE, G, theta_max)
-            ! forceVal = forceVal + findForceOnParticle(point, tree%SW, G, theta_max)
         else
-            forceVal = [0, 0]
-            do i1=1, tree%pointsCount
-                dx = tree%pointsArray(i1)%x - point%x
-                dy = tree%pointsArray(i1)%y - point%y
+            ! Calculate force from each point in this leaf node
+            do i = 1, tree%pointsCount
+                dx = tree%pointsArray(i)%x - point%x
+                dy = tree%pointsArray(i)%y - point%y
                 distance = sqrt(dx**2 + dy**2)
-                if((distance==0) .eqv. .false.) then
-                    forceAngle = atan2(dy, dx)
-                    forceVal(1) = forceVal(1) + G * point%mass * tree%pointsArray(i1)%mass * cos(forceAngle) / distance**2
-                    forceVal(2) = forceVal(2) + G * point%mass * tree%pointsArray(i1)%mass * sin(forceAngle) / distance**2
+
+                if (distance /= 0.0) then
+                    forceMagnitude = G * point%mass * tree%pointsArray(i)%mass / distance**2
+                    forceMagnitude = forceMagnitude * dark_matter_distribution(tree%pointsArray(i)%x, tree%pointsArray(i)%y)
+                    forceVal(1) = forceVal(1) + forceMagnitude * dx / distance
+                    forceVal(2) = forceVal(2) + forceMagnitude * dy / distance
                 end if
             end do
-            
         end if
-    else 
-        !Since this is running, distance shouldnt be 0
-        forceAngle = atan2(dy, dx)
-        forceVal(1) = forceVal(1) + G * point%mass * tree%massContained * cos(forceAngle) / distance**2
-        forceVal(2) = forceVal(2) + G * point%mass * tree%massContained * sin(forceAngle) / distance**2
-
+    else
+        ! Use node's center of mass to calculate force
+        if (distance /= 0.0) then
+            forceMagnitude = G * dark_matter_distribution(tree%com(1), tree%com(2))* point%mass * tree%massContained / distance**2
+            forceVal(1) = forceVal(1) + forceMagnitude * dx / distance
+            forceVal(2) = forceVal(2) + forceMagnitude * dy / distance
+        end if
     end if
 
-    if(isnan(forceVal(1)) .or. isnan(forceVal(2))) then
-        forceVal(1) = 0
-        forceVal(2) = 0
-    end if
-    if((forceVal(1)**2 + forceVal(2)**2)>forceMax**2) then
-        ! forceAngle = atan2(forceVal(2), forceVal(1))
-        ! forceVal(1) = forceMax * cos(forceAngle)
-        ! forceVal(2) = forceMax * sin(forceAngle)
+    ! Ensure the force is not NaN
+    if (isnan(forceVal(1)) .or. isnan(forceVal(2))) then
+        print *, "Getting NaN values of force"
         forceVal = [0.0, 0.0]
     end if
 
-
-
-
-    end function findForceOnParticle
+    ! Limit the force if it exceeds forceMax
+    if (forceVal(1)**2 + forceVal(2)**2 > forceMax**2) then
+        forceVal = [0.0, 0.0]
+        ! forceAngle = atan2(forceVal(2), forceVal(1))
+        ! forceVal(1) = forceMax * cos(forceAngle)
+        ! forceVal(2) = forceMax * sin(forceAngle)
+    end if
+end function findForceOnParticle
 
 
     subroutine updatePositionAndVelocities(pointsToUpdate, dt)
@@ -401,23 +433,14 @@ module Barnes_Hut
         integer:: i
 
         do i = 1, size(pointsToUpdate)
-            ! print *, "Forces"
-            ! print *, pointsToUpdate(i)%forceX
-            ! print *, pointsToUpdate(i)%forceY
-            ! print *, "End forces"
 
-            ! print *, "Old x"
-            ! print *, pointsToUpdate(i)%x
             
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
-            pointsToUpdate(i)%vx = pointsToUpdate(i)%vx + pointsToUpdate(i)%forceX*dt
+            pointsToUpdate(i)%vx = pointsToUpdate(i)%vx + pointsToUpdate(i)%forceX*dt/pointsToUpdate(i)%mass
             pointsToUpdate(i)%x = pointsToUpdate(i)%x + pointsToUpdate(i)%vx*dt/2.0
-            ! print *, "New x"
-            ! print *, pointsToUpdate(i)%x
-            ! print *, "End x"
 
             pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
-            pointsToUpdate(i)%vy = pointsToUpdate(i)%vy + pointsToUpdate(i)%forceY*dt
+            pointsToUpdate(i)%vy = pointsToUpdate(i)%vy + pointsToUpdate(i)%forceY*dt/pointsToUpdate(i)%mass
             pointsToUpdate(i)%y = pointsToUpdate(i)%y + pointsToUpdate(i)%vy*dt/2.0
 
 
@@ -446,32 +469,17 @@ module Barnes_Hut
 
         do i = 1, size(pointsArrayMain)
             forceValueTemp = findForceOnParticle(pointsArrayMain(i), mainTree, G, theta_max)
-            ! print *, forceValueTemp
-            ! print *, ""
-            !Find Force on particle function is causing the error
-            ! forceValueTemp = [1,2]
+            ! forceValueTemp = [0.0, 0.0]
             pointsArrayMain(i)%forceX = forceValueTemp(1)
             pointsArrayMain(i)%forceY = forceValueTemp(2)
-            ! print *, forceValueTemp
+
         end do
 
-        ! print *, "Before updating"
-        ! print *, pointsArrayMain(1)%x
-        ! print *, pointsArrayMain(1)%y
         call updatePositionAndVelocities(pointsArrayMain, dt)
 
 
-        call makePointsInBoundry(pointsArrayMain, 50.0, 50.0, 700.0, 700.0)
-        ! print *, "After updating"
-        ! print *, pointsArrayMain(1)%x
-        ! print *, pointsArrayMain(1)%y
-        
-        ! print *, "Ended update check"
+        ! call makePointsInBoundry(pointsArrayMain, 50.0, 50.0, 700.0, 500.0)
 
-
-
-        ! call deallocateQuadTree(mainTree)
-        
     end subroutine updateStep
 end module Barnes_Hut
 
@@ -480,89 +488,31 @@ program main
     use custom_types
     use Barnes_Hut
     use Body_Tools
+
     implicit none
 
 
 
-    integer, parameter:: noOfBodies = 1000
-    ! type(QuadTree) :: root
-    type(Body), dimension(noOfBodies):: bodies
-    real:: dt = 0.01
-    real:: G = 0.1
-    real:: time = 0
+    integer, parameter:: noOfBodies = 2000 !Pretty self-explanatory name
+    real, parameter:: dt = 0.01 !Time step
+    real, parameter:: G = 0.05 !Gravitational constant
+    real, parameter:: mainMass = 100000.0 !Mass of central object
+    real, parameter:: theta_max = 1.5 !Affects accuracy and speed. Higher is faster but less accurate
+    integer, parameter:: iterations = 50000 !Iterations count. Iterations * dt = simulation length
+
     integer:: i, j
-    real:: theta_max = 1.5
-    type(QuadTree):: root
-    bodies = createBodies(noOfBodies)
+    real:: time = 0 
+    type(Body), dimension(noOfBodies):: bodies
+    bodies = createBodies(noOfBodies, G, mainMass)
 
-    ! do i= 1, size(bodies)
-    !     call addPoints(root, bodies(i))
-    ! end do
-
-    ! do i=1, 100
-    !     print *, bodies(i)%x
-    ! end do
-
-    ! do i = 1, 1000
-    !     call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, 100.0, 1.5, 0.01)
-    ! end do
-
-    ! integer:: i
-
-    ! point1%mass = 15
-    ! point1%x = 200.2
-    ! point1%y = 165
-    ! point1%vx = 0
-    ! point1%vy = 40
-    ! point1%size = 2
-
-    ! point2%mass = 15
-    ! point2%x = 145.3
-    ! point2%y = 160.1
-    ! point2%vx = 0
-    ! point2%vy = -40
-    ! point2%size = 2
-
-    ! point3%mass = 15
-    ! point3%x = 200.2
-    ! point3%y = 305
-    ! point3%vx = 0
-    ! point3%vy = 40
-    ! point3%size = 2
-
-    ! bodies = [point1, point2, point3]
-
-
-
-    ! allocate(bodies(2)) !For some reason this doesn't pass by reference? 
-    ! bodies(1) = point1  !Change is array particles will not reflect on originals...huh
-    ! bodies(2) = point2
-
-    ! print *, bodies(1)%x
-    ! print *, bodies(1)%y
-
-    ! call updateStep(bodies, 0.0, 0.0, 400.0, 400.0, 100.0, 1.5, 0.01)
-    ! ! print *, "Point array val1 x after main code update"
-    ! ! print *, pointsArray(1)%x
-
-
-    ! ! print *, pointsArray
-
-    ! print *, bodies(1)%x
-    ! print *, bodies(1)%y
-    ! print *, point1%x
-    ! print *, point1%y
-
-! 
-
-    open(1, file='solutionValues.txt', status='old')
+    open(1, file='objectStates.txt', status='old')
     write(1,*) size(bodies), dt, G
 
     do i = 1, size(bodies)
         write(1, *) bodies(i)%mass, bodies(i)%x, bodies(i)%y, bodies(i)%vx, bodies(i)%vy, bodies(i)%size
     end do
 
-    do i= 1, 10000
+    do i= 1, iterations
         call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
         time = time + dt
         do j=1, size(bodies)
