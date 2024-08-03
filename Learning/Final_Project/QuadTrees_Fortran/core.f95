@@ -117,7 +117,8 @@ contains
         real :: rx1, ry1, width, height
         type(Body), dimension(:), allocatable:: pointsArray, pointsArrayNW, pointsArrayNE, pointsArraySE, pointsArraySW
         integer:: i, n, validPointsCount, counter
-        ! type(Points), dimension(tree%pointsCount):: pointsArr
+
+        
         if(doesIntersect(tree, rx1, ry1, width, height) .eqv. .false.) then
             allocate(pointsArray(0))
             return
@@ -126,12 +127,6 @@ contains
         if (tree%isDivided .eqv. .false.) then
             validPointsCount = 0
             counter = 1
-
-            ! do i=1, tree%pointsCount
-            !     pointsArr(i) = tree%pointsArray(i)
-            ! end do
-            ! pointsArray = pointsArr
-            ! return
             do i=1, tree%pointsCount
                 if(inRange(tree%pointsArray(i)%x, tree%pointsArray(i)%y, rx1, ry1, width, height)) then
                     validPointsCount = validPointsCount + 1
@@ -153,6 +148,8 @@ contains
             pointsArraySW = queryTreeRegionForPoints(tree%subTrees(4), rx1, ry1, width, height)
             n = size(pointsArrayNW) + size(pointsArrayNE) + size(pointsArraySE) + size(pointsArraySW)
             allocate(pointsArray(n))
+
+            !Combining arrays
             do i = 1, size(pointsArrayNW)
                 pointsArray(i) = pointsArrayNW(i)
             end do
@@ -169,9 +166,6 @@ contains
             return
 
         end if
-
-        
-    
 
     end function queryTreeRegionForPoints
 
