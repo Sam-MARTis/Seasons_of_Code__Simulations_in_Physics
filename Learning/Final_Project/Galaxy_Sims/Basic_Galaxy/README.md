@@ -13,7 +13,7 @@ git clone git@github.com:Sam-MARTis/Seasons_of_Code__Simulations_in_Physics.git
 Next navigate to the correct folder:
 
 ```bash
-cd Seasons_of_Code__Simulations_in_Physics/Learning/Final_Project/Galaxy_Sims/Dual-Center_Galaxy
+cd Seasons_of_Code__Simulations_in_Physics/Learning/Final_Project/Galaxy_Sims/Basic_Galaxy
 ```
 
 Next, run the pre built executable and wait as your computer crunches the numbers
