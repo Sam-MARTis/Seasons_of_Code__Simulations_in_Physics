@@ -1,4 +1,4 @@
-# 2000 Body galaxy simulation
+# Dual-Center_Galaxy_sim
 
 ### How to run
 You have two methods:
@@ -7,20 +7,20 @@ You have two methods:
 
 For both, first clone the repo
 ```bash
-git clone git@github.com:Sam-MARTis/Fortran.git
+git clone git@github.com:Sam-MARTis/Seasons_of_Code__Simulations_in_Physics.git
 ```
 
 Next navigate to the correct folder:
 
 ```bash
-cd Projects/11_Galaxy-Sims/Dual-Center_Galaxy/
+cd Seasons_of_Code__Simulations_in_Physics/Learning/Final_Project/Galaxy_Sims/Dual-Center_Galaxy
 ```
 
 Next, run the pre built executable and wait as your computer crunches the numbers
-(In case you get a different simulation, run the a.out file instead)
+
 
 ```bash
-./galaxy_sim_2k
+./a.out
 ```
 
 If you wish to change parameters you need tor ecompile the file. 
