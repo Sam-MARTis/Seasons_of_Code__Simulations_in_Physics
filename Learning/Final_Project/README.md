@@ -27,3 +27,6 @@ The timeline for the completetion of the project is as follows(Note, this is sub
 - FMM by July $20^{th}$
 
 
+Note, all goals except FMM have been completed. FMM was discarded due to the bottleneck being the write speed of the laptop to the file rather than the computations themselves.
+
+

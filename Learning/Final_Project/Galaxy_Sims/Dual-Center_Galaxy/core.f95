@@ -1,3 +1,4 @@
+
 module custom_types
     
     implicit none
@@ -257,6 +258,8 @@ module Body_Tools
         real:: r1, r2, r3, r4, r5, r6, R, angle
         real:: rx0, ry0, rx1, ry1, xm, ym, K
         real:: dx, dy, vMag
+        real:: separation = 20.0
+        real:: velSeparation = 30.0
         rx0 = 0.0
         ry0 = 0.0
         rx1 = 800.0
@@ -273,7 +276,7 @@ module Body_Tools
 
 
 
-        do i = 1, n-1
+        do i = 1, n-2
             R = random_uniform(6.0, min(rx1-xm, ry1-ym))
             angle = random_uniform(0.0, 6.26318531)
             r1 = random_uniform(1.0, 10.0)
@@ -301,7 +304,9 @@ module Body_Tools
         r6 = 0.3 + r1/20
         bodies(i) = createBody(r1, r2, r3, r4, r5, r6)
         end do
-        bodies(n) = createBody(Center_Mass, xm, ym, 0.0, 0.0, 4.0)
+        velSeparation = K*0.5/((separation)**0.25)/2.0
+        bodies(n-1) = createBody(Center_Mass/2, xm-separation/2, ym, 0.0, -velSeparation, 3.0)
+        bodies(n) = createBody(Center_Mass/2, xm+separation/2, ym, 0.0, velSeparation, 3.0)
     end function createBodies
 
 
@@ -364,7 +369,7 @@ module Barnes_Hut
     integer:: i
     real:: forceAngle
     real:: forceMagnitude
-    real:: forceMax = 2000
+    real:: accMax = 150
 
     forceVal = [0.0, 0.0]
 
@@ -418,11 +423,11 @@ module Barnes_Hut
     end if
 
     ! Limit the force if it exceeds forceMax
-    if (forceVal(1)**2 + forceVal(2)**2 > forceMax**2) then
+    if (forceVal(1)**2 + forceVal(2)**2 > (accMax*point%mass)**2) then
         forceVal = [0.0, 0.0]
-        ! forceAngle = atan2(forceVal(2), forceVal(1))
-        ! forceVal(1) = forceMax * cos(forceAngle)
-        ! forceVal(2) = forceMax * sin(forceAngle)
+        forceAngle = atan2(forceVal(2), forceVal(1))
+        forceVal(1) = accMax *point%mass*cos(forceAngle)
+        forceVal(2) = accMax *point%mass*sin(forceAngle)
     end if
 end function findForceOnParticle
 
@@ -446,6 +451,8 @@ end function findForceOnParticle
 
             pointsToUpdate(i)%forceX = 0
             pointsToUpdate(i)%forceY = 0
+            ! pointsToUpdate(i)%vx = pointsToUpdate(i)%vx * 0.99999
+            ! pointsToUpdate(i)%vy = pointsToUpdate(i)%vy * 0.99999
         end do
     end subroutine updatePositionAndVelocities
 
@@ -495,9 +502,9 @@ program main
 
     integer, parameter:: noOfBodies = 2000 !Pretty self-explanatory name
     real, parameter:: dt = 0.01 !Time step
-    real, parameter:: G = 0.05 !Gravitational constant
-    real, parameter:: mainMass = 100000.0 !Mass of central object
-    real, parameter:: theta_max = 1.5 !Affects accuracy and speed. Higher is faster but less accurate
+    real, parameter:: G = 0.005 !Gravitational constant
+    real, parameter:: mainMass = 1000000.0 !Mass of central object
+    real, parameter:: theta_max = 1.0 !Affects accuracy and speed. Higher is faster but less accurate
     integer, parameter:: iterations = 50000 !Iterations count. Iterations * dt = simulation length
 
     integer:: i, j
@@ -515,6 +522,9 @@ program main
     do i= 1, iterations
         call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
         time = time + dt
+        if(.not. mod(i, 3)==0) then
+            cycle
+        end if
         do j=1, size(bodies)
             write(1, *) time, bodies(j)%x, bodies(j)%y
         end do

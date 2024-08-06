@@ -5,18 +5,19 @@ You have two methods:
 1) Simply run the file provided
 2) Make changes to the parametes(ex: Different no of particles)
 
-For both, first clone the repo (This might take a while. ~150mb)
+For both, first clone the repo
 ```bash
-git clone git@github.com:Sam-MARTis/Seasons_of_Code__Simulations_in_Physics.git
+git clone git@github.com:Sam-MARTis/Fortran.git
 ```
 
 Next navigate to the correct folder:
 
 ```bash
-cd Seasons_of_Code__Simulations_in_Physics/Learning/Final_Project/Barnes_Hut/
+cd Projects/11_Galaxy-Sims/Dual-Center_Galaxy/
 ```
 
 Next, run the pre built executable and wait as your computer crunches the numbers
+(In case you get a different simulation, run the a.out file instead)
 
 ```bash
 ./galaxy_sim_2k

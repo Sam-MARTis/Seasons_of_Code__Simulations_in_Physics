@@ -493,14 +493,14 @@ program main
 
 
 
-    integer, parameter:: noOfBodies = 2000 !Pretty self-explanatory name
+    integer, parameter:: noOfBodies = 1000 !Pretty self-explanatory name
     real, parameter:: dt = 0.01 !Time step
     real, parameter:: G = 0.05 !Gravitational constant
     real, parameter:: mainMass = 100000.0 !Mass of central object
     real, parameter:: theta_max = 1.5 !Affects accuracy and speed. Higher is faster but less accurate
-    integer, parameter:: iterations = 50000 !Iterations count. Iterations * dt = simulation length
+    integer, parameter:: iterations = 500000 !Iterations count. Iterations * dt = simulation length
 
-    integer:: i, j
+    integer:: i, j, k
     real:: time = 0 
     type(Body), dimension(noOfBodies):: bodies
     bodies = createBodies(noOfBodies, G, mainMass)
@@ -513,8 +513,11 @@ program main
     end do
 
     do i= 1, iterations
-        call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
-        time = time + dt
+        do k = 1, 5
+
+            call updateStep(bodies, 0.0, 0.0, 800.0, 800.0, G, theta_max, dt)
+            time = time + dt
+        end do
         do j=1, size(bodies)
             write(1, *) time, bodies(j)%x, bodies(j)%y
         end do
