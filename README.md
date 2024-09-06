@@ -61,7 +61,7 @@ The solution to this would be to re-write the code in a different lanaguage that
 
 
 ## Closing remarks:
-AMAZING experience. Definitely reccomended for others to try. Thank you to the mentors, Mridul Goel and Apurv keep, for the oppurtunity and guidance.
+AMAZING experience. Definitely reccomended for others to try. Thank you to the mentors, Mridul Goel and Apurv Keer, for the oppurtunity and guidance.
 
 
 
